@@ -20,4 +20,4 @@ export type ContributionData = {
   years: ContributionYear[];
 };
 
-export type ViewMode = "grid" | "forest" | "terrain";
+export type ViewMode = "grid" | "forest" | "city";

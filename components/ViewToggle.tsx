@@ -13,7 +13,7 @@ type Props = {
 const MODES: { value: ViewMode; label: string }[] = [
   { value: "grid", label: "Grid" },
   { value: "forest", label: "Forest" },
-  { value: "terrain", label: "Terrain" },
+  { value: "city", label: "City" },
 ];
 
 export function ViewToggle({

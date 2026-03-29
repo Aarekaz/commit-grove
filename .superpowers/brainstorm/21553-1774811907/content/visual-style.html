@@ -1,0 +1,103 @@
+<h2>3D Forest Visual Style</h2>
+<p class="subtitle">How should commits look when they "grow" into the forest?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0d1117; padding: 24px; display: flex; align-items: flex-end; justify-content: center; gap: 3px; height: 180px;">
+      <!-- Pure voxel cubes -->
+      <div style="display: flex; gap: 2px; align-items: flex-end;">
+        <div style="width: 14px; height: 20px; background: #0e4429; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 55px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 90px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 40px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 70px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 30px; background: #0e4429; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 110px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 50px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 25px; background: #0e4429; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 65px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 85px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 35px; background: #006d32; border-radius: 1px;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Pure Voxel Bars</h3>
+      <p>Faithful to the original video. GitHub's green palette, cubes extrude upward by commit count. Minimal, geometric, immediately recognizable as "GitHub contribution graph in 3D." Clean and fast to render.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0d1117; padding: 24px; display: flex; align-items: flex-end; justify-content: center; gap: 6px; height: 180px;">
+      <!-- Voxel trees (stacked cubes forming tree shapes) -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 10px; height: 10px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 18px; height: 8px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 24px; height: 8px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 8px; height: 16px; background: #5a3e28; border-radius: 1px;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 8px; height: 6px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 14px; height: 6px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 6px; height: 10px; background: #5a3e28; border-radius: 1px;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 12px; height: 12px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 22px; height: 10px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 30px; height: 10px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 36px; height: 10px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 10px; height: 22px; background: #5a3e28; border-radius: 1px;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 6px; height: 5px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 10px; height: 5px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 5px; height: 8px; background: #5a3e28; border-radius: 1px;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 10px; height: 8px; background: #39d353; border-radius: 1px;"></div>
+        <div style="width: 18px; height: 8px; background: #26a641; border-radius: 1px;"></div>
+        <div style="width: 26px; height: 8px; background: #006d32; border-radius: 1px;"></div>
+        <div style="width: 8px; height: 18px; background: #5a3e28; border-radius: 1px;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Voxel Trees</h3>
+      <p>Same voxel aesthetic but cubes form tree silhouettes — layered pyramids with brown trunks. Taller trees = more commits. Feels like a Minecraft forest. More whimsical, more shareable. Moderate rendering cost.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background: #0d1117; padding: 24px; display: flex; align-items: flex-end; justify-content: center; gap: 8px; height: 180px;">
+      <!-- Stylized low-poly trees -->
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 0; height: 0; border-left: 14px solid transparent; border-right: 14px solid transparent; border-bottom: 28px solid #26a641;"></div>
+        <div style="width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 22px solid #006d32; margin-top: -8px;"></div>
+        <div style="width: 6px; height: 14px; background: #5a3e28;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 18px solid #39d353;"></div>
+        <div style="width: 0; height: 0; border-left: 13px solid transparent; border-right: 13px solid transparent; border-bottom: 14px solid #26a641; margin-top: -5px;"></div>
+        <div style="width: 5px; height: 10px; background: #5a3e28;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-bottom: 36px solid #006d32;"></div>
+        <div style="width: 0; height: 0; border-left: 24px solid transparent; border-right: 24px solid transparent; border-bottom: 28px solid #26a641; margin-top: -10px;"></div>
+        <div style="width: 8px; height: 20px; background: #5a3e28;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 14px solid #39d353;"></div>
+        <div style="width: 5px; height: 8px; background: #5a3e28;"></div>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center;">
+        <div style="width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-bottom: 32px solid #26a641;"></div>
+        <div style="width: 0; height: 0; border-left: 20px solid transparent; border-right: 20px solid transparent; border-bottom: 24px solid #006d32; margin-top: -8px;"></div>
+        <div style="width: 7px; height: 16px; background: #5a3e28;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Low-Poly Forest</h3>
+      <p>Triangular pine trees with layered canopies. More organic and "forest-like." Height and density scale with commits. Beautiful but more complex geometry — heavier to render with thousands of cells.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top: 24px; opacity: 0.6;">Click a card to select. All options use GitHub's signature green palette on dark backgrounds.</p>

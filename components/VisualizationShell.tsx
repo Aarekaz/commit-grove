@@ -19,7 +19,7 @@ export function VisualizationShell({ data }: Props) {
   const yearNumbers = data.years.map((y) => y.year);
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
 
-  const is3D = mode === "forest" || mode === "terrain";
+  const is3D = mode === "forest" || mode === "city";
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
