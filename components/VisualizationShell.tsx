@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { ContributionData, ViewMode } from "@/lib/types";
+import { ContributionHeatmap } from "./ContributionHeatmap";
 
 type Props = {
   data: ContributionData;
@@ -13,16 +14,15 @@ export function VisualizationShell({ data }: Props) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      {/* Placeholder — will be replaced by heatmap + 3D scene */}
-      <div className="flex h-full items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold">{data.username}&apos;s forest</h2>
-          <p className="mt-2 text-gray-500">
-            {data.years.length} year(s) · {data.years.reduce((sum, y) => sum + y.total, 0)} total contributions
-          </p>
-          <p className="mt-1 text-sm text-gray-400">Mode: {mode} · Year: {selectedYear}</p>
+      {/* 2D Heatmap */}
+      {mode === "grid" && <ContributionHeatmap years={data.years} />}
+
+      {/* 3D Scene placeholder */}
+      {mode !== "grid" && (
+        <div className="flex h-full items-center justify-center text-gray-400">
+          3D view coming soon (mode: {mode}, year: {selectedYear})
         </div>
-      </div>
+      )}
 
       {/* Back link */}
       <a
@@ -31,6 +31,11 @@ export function VisualizationShell({ data }: Props) {
       >
         ← Try another
       </a>
+
+      {/* Username badge */}
+      <div className="absolute right-4 top-4 rounded-lg bg-white/80 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur">
+        {data.username}&apos;s forest
+      </div>
     </div>
   );
 }
