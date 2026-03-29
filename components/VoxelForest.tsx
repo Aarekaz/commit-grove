@@ -87,7 +87,7 @@ export function VoxelForest({ days }: Props) {
         day.row * (CELL_SIZE + GAP)
       );
       dummy.scale.set(CELL_SIZE, Math.max(0.01, currentHeight), CELL_SIZE);
-      dummy.rotation.set(0, 0, sway);
+      dummy.rotation.set(0, sway, 0);
       dummy.updateMatrix();
       meshRef.current.setMatrixAt(i, dummy.matrix);
     }

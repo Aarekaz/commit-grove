@@ -6,7 +6,7 @@ export default function Home() {
       <div className="flex max-w-lg flex-col items-center gap-8 text-center">
         <div className="flex flex-col gap-3">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-            What if every commit planted a seed?
+            What if every GitHub commit planted a seed?
           </h1>
           <p className="text-lg text-gray-500">
             Watch your code grow into a living forest.

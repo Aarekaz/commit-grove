@@ -23,12 +23,12 @@ export function VisualizationShell({ data }: Props) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
-      <AnimatePresence mode="sync">
-        {/* 2D Heatmap */}
+      {/* 2D Heatmap — animated in/out */}
+      <AnimatePresence>
         {!is3D && (
           <motion.div
             key="grid"
-            className="absolute inset-0"
+            className="absolute inset-0 z-[1]"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
@@ -37,25 +37,25 @@ export function VisualizationShell({ data }: Props) {
             <ContributionHeatmap years={data.years} />
           </motion.div>
         )}
-
-        {/* 3D Scene */}
-        {is3D && selectedYearData && (
-          <motion.div
-            key="3d"
-            className="absolute inset-0"
-            initial={{ opacity: 0, scale: 1.05 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            <ForestScene
-              days={flattenYearDays(selectedYearData)}
-              mode={mode}
-              numCols={selectedYearData.weeks.length}
-            />
-          </motion.div>
-        )}
       </AnimatePresence>
+
+      {/* 3D Scene — always mounted, visibility controlled by CSS */}
+      {selectedYearData && (
+        <div
+          className="absolute inset-0"
+          style={{
+            opacity: is3D ? 1 : 0,
+            pointerEvents: is3D ? "auto" : "none",
+            transition: "opacity 0.3s ease-out",
+          }}
+        >
+          <ForestScene
+            days={flattenYearDays(selectedYearData)}
+            mode={mode}
+            numCols={selectedYearData.weeks.length}
+          />
+        </div>
+      )}
 
       {/* Back link */}
       <a
