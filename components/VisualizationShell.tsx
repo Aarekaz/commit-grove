@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { ContributionData, ViewMode } from "@/lib/types";
 import { flattenYearDays } from "@/lib/transform";
 import { ContributionHeatmap } from "./ContributionHeatmap";
@@ -18,19 +19,43 @@ export function VisualizationShell({ data }: Props) {
   const yearNumbers = data.years.map((y) => y.year);
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
 
-  return (
-    <div className="relative h-screen w-screen overflow-hidden">
-      {/* 2D Heatmap */}
-      {mode === "grid" && <ContributionHeatmap years={data.years} />}
+  const is3D = mode === "forest" || mode === "terrain";
 
-      {/* 3D Scene */}
-      {mode !== "grid" && selectedYearData && (
-        <ForestScene
-          days={flattenYearDays(selectedYearData)}
-          mode={mode}
-          numCols={selectedYearData.weeks.length}
-        />
-      )}
+  return (
+    <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
+      <AnimatePresence mode="sync">
+        {/* 2D Heatmap */}
+        {!is3D && (
+          <motion.div
+            key="grid"
+            className="absolute inset-0"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <ContributionHeatmap years={data.years} />
+          </motion.div>
+        )}
+
+        {/* 3D Scene */}
+        {is3D && selectedYearData && (
+          <motion.div
+            key="3d"
+            className="absolute inset-0"
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+          >
+            <ForestScene
+              days={flattenYearDays(selectedYearData)}
+              mode={mode}
+              numCols={selectedYearData.weeks.length}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Back link */}
       <a
