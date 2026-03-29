@@ -36,7 +36,9 @@ export function transformContributions(
     }
   }
 
-  const weeks: ContributionDay[][] = contributionCalendar.weeks.map(
+  const today = new Date().toISOString().slice(0, 10);
+
+  const allWeeks: ContributionDay[][] = contributionCalendar.weeks.map(
     (week, colIndex) =>
       week.contributionDays.map((day, rowIndex) => ({
         date: day.date,
@@ -46,6 +48,11 @@ export function transformContributions(
         col: colIndex,
         height: maxCount > 0 ? day.contributionCount / maxCount : 0,
       }))
+  );
+
+  // Trim future weeks (all days after today)
+  const weeks = allWeeks.filter((week) =>
+    week.some((day) => day.date <= today)
   );
 
   return {
