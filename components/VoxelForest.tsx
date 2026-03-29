@@ -10,7 +10,7 @@ type Props = {
   days: ContributionDay[];
 };
 
-const MAX_HEIGHT = 8;
+const MAX_HEIGHT = 2.5;
 const CELL_SIZE = 1;
 const GAP = 0.1;
 const GROW_DURATION = 0.6;
