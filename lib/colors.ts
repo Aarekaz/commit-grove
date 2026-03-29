@@ -16,21 +16,21 @@ export const LEVEL_COLORS_RGB: Record<ContributionLevel, [number, number, number
   4: [0.129, 0.431, 0.224],
 };
 
-// City building colors — concrete/glass
+// City building colors — green glass
 export const CITY_BODY_COLORS_RGB: [number, number, number][] = [
-  [0.62, 0.63, 0.65],  // light concrete
-  [0.52, 0.53, 0.56],  // concrete
-  [0.42, 0.44, 0.50],  // dark concrete
-  [0.34, 0.37, 0.45],  // steel
-  [0.26, 0.30, 0.40],  // dark steel
+  [0.55, 0.72, 0.52],  // light green
+  [0.40, 0.62, 0.38],  // medium green
+  [0.30, 0.54, 0.30],  // forest green
+  [0.22, 0.46, 0.24],  // dark green
+  [0.16, 0.38, 0.18],  // deep green
 ];
 
 export const CITY_GLASS_COLORS_RGB: [number, number, number][] = [
-  [0.70, 0.75, 0.82],  // light glass
-  [0.55, 0.62, 0.74],  // blue glass
-  [0.42, 0.52, 0.68],  // tinted glass
-  [0.35, 0.45, 0.60],  // dark glass
-  [0.28, 0.38, 0.55],  // deep glass
+  [0.65, 0.80, 0.62],  // light green glass
+  [0.50, 0.72, 0.50],  // green glass
+  [0.38, 0.64, 0.40],  // tinted green
+  [0.30, 0.56, 0.32],  // dark green glass
+  [0.22, 0.48, 0.25],  // deep green glass
 ];
 
 // Park colors
