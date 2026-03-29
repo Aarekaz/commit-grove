@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function UserPage({ params }: Props) {
   const { username } = await params;
-  const data = await fetchContributions(username, 1);
+  const data = await fetchContributions(username, 5);
 
   if (!data) {
     notFound();
