@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { ContributionDay, ViewMode } from "@/lib/types";
+import { smoothHeights } from "@/lib/transform";
 import { VoxelForest } from "./VoxelForest";
+import { TerrainHills } from "./TerrainHills";
 
 type Props = {
   days: ContributionDay[];
@@ -15,6 +18,11 @@ export function ForestScene({ days, mode, numCols }: Props) {
   const numRows = 7;
   const centerX = (numCols * 1.1) / 2;
   const centerZ = (numRows * 1.1) / 2;
+
+  const smoothedDays = useMemo(
+    () => smoothHeights(days, numRows, numCols),
+    [days, numCols]
+  );
 
   return (
     <div className="h-full w-full">
@@ -33,6 +41,9 @@ export function ForestScene({ days, mode, numCols }: Props) {
 
         <group position={[-centerX, 0, -centerZ]}>
           {mode === "forest" && <VoxelForest days={days} />}
+          {mode === "terrain" && (
+            <TerrainHills days={days} smoothedDays={smoothedDays} />
+          )}
         </group>
 
         <OrbitControls
