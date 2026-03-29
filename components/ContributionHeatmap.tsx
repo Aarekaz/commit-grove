@@ -89,6 +89,16 @@ function YearGrid({ year }: { year: ContributionYear }) {
 }
 
 export function ContributionHeatmap({ years }: Props) {
+  if (years.length === 0 || years.every((y) => y.total === 0)) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <p className="text-lg text-gray-400">
+          No contributions yet — start planting seeds!
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full w-full items-center justify-center overflow-auto p-8">
       <div className="flex flex-col gap-6">
