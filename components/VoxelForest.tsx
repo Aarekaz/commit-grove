@@ -178,7 +178,7 @@ export function VoxelForest({ cells, onHover }: Props) {
     (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
       const id = e.instanceId;
-      if (id !== undefined && id < cells.length && cells[id].count > 0) {
+      if (id !== undefined && id < cells.length && cells[id].terrainType !== "water") {
         onHover?.(cells[id], { x: e.clientX, y: e.clientY });
       } else {
         onHover?.(null);
