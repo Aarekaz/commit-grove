@@ -171,6 +171,7 @@ export function CityGrid({ cells, onHover }: Props) {
   const baseRef = useRef<THREE.InstancedMesh>(null);
   const featureRef = useRef<THREE.InstancedMesh>(null);
   const startTime = useRef(Date.now());
+  const animDone = useRef(false);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
@@ -221,19 +222,34 @@ export function CityGrid({ cells, onHover }: Props) {
     baseRef.current.instanceMatrix.needsUpdate = true;
   }, [cells, dummy]);
 
+  const maxAnimTime = useMemo(() => {
+    let maxDelay = 0;
+    for (const c of featureVoxels) {
+      const d = c.col * 0.008 + c.row * 0.004;
+      if (d > maxDelay) maxDelay = d;
+    }
+    return maxDelay + GROW_DURATION + 0.1;
+  }, [featureVoxels]);
+
   useEffect(() => {
     startTime.current = Date.now();
+    animDone.current = false;
   }, [featureVoxels]);
 
   useFrame(() => {
-    if (!featureRef.current) return;
+    if (animDone.current || !featureRef.current) return;
+
     const elapsed = (Date.now() - startTime.current) / 1000;
+
+    if (elapsed > maxAnimTime) {
+      animDone.current = true;
+    }
 
     for (let i = 0; i < featureVoxels.length; i++) {
       const cube = featureVoxels[i];
       const delay = cube.col * 0.008 + cube.row * 0.004;
       const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-      const eased = 1 - Math.pow(1 - progress, 3);
+      const eased = animDone.current ? 1 : 1 - Math.pow(1 - progress, 3);
 
       dummy.position.set(cube.x, cube.y * eased, cube.z);
       dummy.scale.set(cube.w, Math.max(0.01, cube.h * eased), cube.d);

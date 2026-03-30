@@ -87,6 +87,7 @@ export function VoxelForest({ cells, onHover }: Props) {
   const terrainRef = useRef<THREE.InstancedMesh>(null);
   const treeRef = useRef<THREE.InstancedMesh>(null);
   const startTime = useRef(Date.now());
+  const animDone = useRef(false);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
@@ -128,19 +129,37 @@ export function VoxelForest({ cells, onHover }: Props) {
     if (treeRef.current.instanceColor) treeRef.current.instanceColor.needsUpdate = true;
   }, [treeCubes, color]);
 
+  // Precompute max animation time
+  const maxAnimTime = useMemo(() => {
+    let maxDelay = 0;
+    for (const c of cells) {
+      const d = c.col * 0.006 + c.row * 0.003;
+      if (d > maxDelay) maxDelay = d;
+    }
+    return maxDelay + GROW_DURATION + TREE_DELAY + 0.1;
+  }, [cells]);
+
   useEffect(() => {
     startTime.current = Date.now();
+    animDone.current = false;
   }, [cells]);
 
   useFrame(() => {
+    if (animDone.current) return;
+
     const elapsed = (Date.now() - startTime.current) / 1000;
+
+    if (elapsed > maxAnimTime) {
+      // Set final positions once and stop
+      animDone.current = true;
+    }
 
     if (terrainRef.current) {
       for (let i = 0; i < cells.length; i++) {
         const cell = cells[i];
         const delay = cell.col * 0.006 + cell.row * 0.003;
         const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-        const eased = 1 - Math.pow(1 - progress, 3);
+        const eased = animDone.current ? 1 : 1 - Math.pow(1 - progress, 3);
 
         const isWater = cell.terrainType === "water";
         const targetY = isWater ? WATER_Y : cell.terrainHeight * TERRAIN_SCALE;
@@ -160,13 +179,11 @@ export function VoxelForest({ cells, onHover }: Props) {
         const cube = treeCubes[i];
         const delay = cube.col * 0.006 + cube.row * 0.003 + TREE_DELAY;
         const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-        const eased = 1 - Math.pow(1 - progress, 3);
-
-        const sway = Math.sin(elapsed * 1.2 + cube.col * 0.4 + cube.row * 0.6) * 0.015;
+        const eased = animDone.current ? 1 : 1 - Math.pow(1 - progress, 3);
 
         dummy.position.set(cube.x, cube.y * eased, cube.z);
         dummy.scale.set(cube.w, Math.max(0.01, cube.h * eased), cube.d);
-        dummy.rotation.set(0, sway, 0);
+        dummy.rotation.set(0, 0, 0);
         dummy.updateMatrix();
         treeRef.current.setMatrixAt(i, dummy.matrix);
       }
