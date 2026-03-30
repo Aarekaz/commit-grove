@@ -66,13 +66,15 @@ export function VisualizationShell({ data }: Props) {
     });
   }, [visibleWeeks, maxWeeks]);
 
-  // Filter days to only show visible weeks
+  // Filter days: only past/present weeks for 3D (no empty future terrain)
+  const today = new Date().toISOString().slice(0, 10);
   const terrainCells = useMemo(() => {
     if (!selectedYearData) return [];
     const allDays = flattenYearDays(selectedYearData);
-    const visible = allDays.filter((d) => d.col < visibleWeeks);
+    const pastDays = allDays.filter((d) => d.date <= today);
+    const visible = pastDays.filter((d) => d.col < visibleWeeks);
     return generateTerrain(visible, 7, visibleWeeks, data.username);
-  }, [selectedYearData, visibleWeeks, data.username]);
+  }, [selectedYearData, visibleWeeks, data.username, today]);
 
   // 3D tooltip state
   const [hoveredDay, setHoveredDay] = useState<{
