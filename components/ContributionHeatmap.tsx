@@ -14,11 +14,16 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 function getMonthLabels(weeks: ContributionDay[][]): { label: string; col: number }[] {
   const labels: { label: string; col: number }[] = [];
   let lastMonth = -1;
-  let lastCol = -4; // ensure minimum 3-column gap between labels
+  let lastCol = -4;
   for (let col = 0; col < weeks.length; col++) {
     const firstDay = weeks[col]?.[0];
     if (!firstDay) continue;
     const month = new Date(firstDay.date).getMonth();
+    // Skip December spillover at the start of a year
+    if (col <= 1 && month === 11) {
+      lastMonth = month;
+      continue;
+    }
     if (month !== lastMonth) {
       if (col - lastCol >= 3) {
         labels.push({ label: MONTHS[month], col });
