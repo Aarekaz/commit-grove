@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { ContributionData, ContributionDay, ViewMode } from "@/lib/types";
+import type { ContributionData, TerrainCell, ViewMode } from "@/lib/types";
+import { generateTerrain } from "@/lib/terrain";
 import { flattenYearDays } from "@/lib/transform";
 import { ContributionHeatmap } from "./ContributionHeatmap";
 import { ForestScene } from "./ForestScene";
@@ -66,20 +67,21 @@ export function VisualizationShell({ data }: Props) {
   }, [visibleWeeks, maxWeeks]);
 
   // Filter days to only show visible weeks
-  const visibleDays = useMemo(() => {
+  const terrainCells = useMemo(() => {
     if (!selectedYearData) return [];
     const allDays = flattenYearDays(selectedYearData);
-    return allDays.filter((d) => d.col < visibleWeeks);
-  }, [selectedYearData, visibleWeeks]);
+    const visible = allDays.filter((d) => d.col < visibleWeeks);
+    return generateTerrain(visible, 7, visibleWeeks, data.username);
+  }, [selectedYearData, visibleWeeks, data.username]);
 
   // 3D tooltip state
   const [hoveredDay, setHoveredDay] = useState<{
-    day: ContributionDay;
+    day: TerrainCell;
     position: { x: number; y: number };
   } | null>(null);
 
   const handleDayHover = useCallback(
-    (day: ContributionDay | null, event?: { x: number; y: number }) => {
+    (day: TerrainCell | null, event?: { x: number; y: number }) => {
       if (day && event && day.count > 0) {
         setHoveredDay({ day, position: event });
       } else {
@@ -120,7 +122,7 @@ export function VisualizationShell({ data }: Props) {
           }}
         >
           <ForestScene
-            days={visibleDays}
+            cells={terrainCells}
             mode={mode}
             numCols={visibleWeeks}
             onDayHover={handleDayHover}
