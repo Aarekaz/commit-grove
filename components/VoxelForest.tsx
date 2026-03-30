@@ -196,7 +196,8 @@ export function VoxelForest({ cells, onHover }: Props) {
       e.stopPropagation();
       const id = e.instanceId;
       if (id !== undefined && id < cells.length && cells[id].terrainType !== "water") {
-        onHover?.(cells[id], { x: e.clientX, y: e.clientY });
+        const nativeEvent = e.nativeEvent ?? e;
+        onHover?.(cells[id], { x: (nativeEvent as PointerEvent).clientX, y: (nativeEvent as PointerEvent).clientY });
       } else {
         onHover?.(null);
       }
@@ -213,6 +214,7 @@ export function VoxelForest({ cells, onHover }: Props) {
       <instancedMesh
         ref={terrainRef}
         args={[undefined, undefined, cells.length]}
+        frustumCulled={false}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
       >
