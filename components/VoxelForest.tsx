@@ -1,84 +1,81 @@
 "use client";
 
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import type { ContributionDay } from "@/lib/types";
-import { LEVEL_COLORS_RGB } from "@/lib/colors";
+import type { TerrainCell } from "@/lib/types";
+import type { ThreeEvent } from "@react-three/fiber";
+import {
+  LEVEL_COLORS_RGB,
+  TERRAIN_LAND_RGB,
+  TERRAIN_SHORELINE_RGB,
+  TERRAIN_WATER_RGB,
+} from "@/lib/colors";
 
 type Props = {
-  days: ContributionDay[];
+  cells: TerrainCell[];
+  onHover?: (cell: TerrainCell | null, pos?: { x: number; y: number }) => void;
 };
 
 const CELL_SIZE = 1;
-const GAP = 0.1;
-const GROW_DURATION = 0.8;
+const TERRAIN_SCALE = 3;
+const WATER_Y = 0.06 * TERRAIN_SCALE;
+const GROW_DURATION = 0.6;
+const TREE_DELAY = 0.3;
 
 type VoxelCube = {
-  x: number;
-  y: number;
-  z: number;
-  w: number;
-  h: number;
-  d: number;
-  r: number;
-  g: number;
-  b: number;
-  col: number;
-  row: number;
+  x: number; y: number; z: number;
+  w: number; h: number; d: number;
+  r: number; g: number; b: number;
+  col: number; row: number;
 };
 
-function generateTreeCubes(day: ContributionDay): VoxelCube[] {
-  const cx = day.col * (CELL_SIZE + GAP);
-  const cz = day.row * (CELL_SIZE + GAP);
-  const t = day.height; // 0-1 normalized
+function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
+  if (cell.count <= 0 || cell.terrainType === "water") return [];
 
-  if (t <= 0) return [];
-
+  const cx = cell.col * CELL_SIZE;
+  const cz = cell.row * CELL_SIZE;
+  const t = cell.height;
   const cubes: VoxelCube[] = [];
-  const rgb = LEVEL_COLORS_RGB[day.level];
+  const rgb = LEVEL_COLORS_RGB[cell.level];
   const scale = 0.3 + t * 0.45;
 
-  // Trunk — narrow, darker green
   const trunkW = scale * 0.28;
   const trunkH = 0.15 + t * 0.6;
   cubes.push({
-    x: cx, y: trunkH / 2, z: cz,
+    x: cx, y: baseY + trunkH / 2, z: cz,
     w: trunkW, h: trunkH, d: trunkW,
     r: rgb[0] * 0.6, g: rgb[1] * 0.6, b: rgb[2] * 0.6,
-    col: day.col, row: day.row,
+    col: cell.col, row: cell.row,
   });
 
-  // Bottom canopy — widest layer, always present
   const c1W = scale * 0.95;
   const c1H = 0.15 + t * 0.25;
   cubes.push({
-    x: cx, y: trunkH + c1H / 2, z: cz,
+    x: cx, y: baseY + trunkH + c1H / 2, z: cz,
     w: c1W, h: c1H, d: c1W,
     r: rgb[0], g: rgb[1], b: rgb[2],
-    col: day.col, row: day.row,
+    col: cell.col, row: cell.row,
   });
 
-  // Middle canopy — for medium+ commits
   if (t > 0.25) {
     const c2W = scale * 0.7;
     const c2H = 0.12 + t * 0.2;
     cubes.push({
-      x: cx, y: trunkH + c1H + c2H / 2, z: cz,
+      x: cx, y: baseY + trunkH + c1H + c2H / 2, z: cz,
       w: c2W, h: c2H, d: c2W,
       r: rgb[0] * 0.9, g: rgb[1] * 0.9, b: rgb[2] * 0.9,
-      col: day.col, row: day.row,
+      col: cell.col, row: cell.row,
     });
 
-    // Top canopy — for high commits
     if (t > 0.55) {
       const c3W = scale * 0.4;
       const c3H = 0.1 + t * 0.12;
       cubes.push({
-        x: cx, y: trunkH + c1H + c2H + c3H / 2, z: cz,
+        x: cx, y: baseY + trunkH + c1H + c2H + c3H / 2, z: cz,
         w: c3W, h: c3H, d: c3W,
         r: rgb[0] * 0.8, g: rgb[1] * 0.8, b: rgb[2] * 0.8,
-        col: day.col, row: day.row,
+        col: cell.col, row: cell.row,
       });
     }
   }
@@ -86,91 +83,128 @@ function generateTreeCubes(day: ContributionDay): VoxelCube[] {
   return cubes;
 }
 
-export function VoxelForest({ days }: Props) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const baseRef = useRef<THREE.InstancedMesh>(null);
+export function VoxelForest({ cells, onHover }: Props) {
+  const terrainRef = useRef<THREE.InstancedMesh>(null);
+  const treeRef = useRef<THREE.InstancedMesh>(null);
   const startTime = useRef(Date.now());
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
 
-  // Pre-compute all tree cubes
   const treeCubes = useMemo(() => {
-    return days.filter((d) => d.height > 0).flatMap(generateTreeCubes);
-  }, [days]);
+    return cells
+      .filter((c) => c.count > 0 && c.terrainType !== "water")
+      .flatMap((cell) => {
+        const baseY = cell.terrainHeight * TERRAIN_SCALE;
+        return generateTreeCubes(cell, baseY);
+      });
+  }, [cells]);
 
-  // Set up base grid
   useEffect(() => {
-    if (!baseRef.current) return;
-    const baseColor = new THREE.Color(0.92, 0.93, 0.94);
-    for (let i = 0; i < days.length; i++) {
-      const day = days[i];
-      dummy.position.set(
-        day.col * (CELL_SIZE + GAP),
-        -0.05,
-        day.row * (CELL_SIZE + GAP)
-      );
-      dummy.scale.set(CELL_SIZE, 0.1, CELL_SIZE);
-      dummy.updateMatrix();
-      baseRef.current.setMatrixAt(i, dummy.matrix);
-      baseRef.current.setColorAt(i, baseColor);
+    if (!terrainRef.current) return;
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      let rgb: [number, number, number];
+      if (cell.terrainType === "water") {
+        rgb = TERRAIN_WATER_RGB;
+      } else if (cell.terrainType === "shoreline") {
+        rgb = TERRAIN_SHORELINE_RGB;
+      } else {
+        rgb = TERRAIN_LAND_RGB;
+      }
+      color.setRGB(rgb[0], rgb[1], rgb[2]);
+      terrainRef.current.setColorAt(i, color);
     }
-    baseRef.current.instanceMatrix.needsUpdate = true;
-    if (baseRef.current.instanceColor) baseRef.current.instanceColor.needsUpdate = true;
-  }, [days, dummy]);
+    if (terrainRef.current.instanceColor) terrainRef.current.instanceColor.needsUpdate = true;
+  }, [cells, color]);
 
-  // Set colors for tree cubes
   useEffect(() => {
-    if (!meshRef.current) return;
+    if (!treeRef.current) return;
     for (let i = 0; i < treeCubes.length; i++) {
       const cube = treeCubes[i];
       color.setRGB(cube.r, cube.g, cube.b);
-      meshRef.current.setColorAt(i, color);
+      treeRef.current.setColorAt(i, color);
     }
-    if (meshRef.current.instanceColor) meshRef.current.instanceColor.needsUpdate = true;
+    if (treeRef.current.instanceColor) treeRef.current.instanceColor.needsUpdate = true;
   }, [treeCubes, color]);
 
-  // Reset animation on data change
   useEffect(() => {
     startTime.current = Date.now();
-  }, [treeCubes]);
+  }, [cells]);
 
-  // Animate: grow trees + gentle sway
   useFrame(() => {
-    if (!meshRef.current) return;
     const elapsed = (Date.now() - startTime.current) / 1000;
 
-    for (let i = 0; i < treeCubes.length; i++) {
-      const cube = treeCubes[i];
+    if (terrainRef.current) {
+      for (let i = 0; i < cells.length; i++) {
+        const cell = cells[i];
+        const delay = cell.col * 0.006 + cell.row * 0.003;
+        const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
+        const eased = 1 - Math.pow(1 - progress, 3);
 
-      // Staggered grow based on grid position
-      const delay = cube.col * 0.008 + cube.row * 0.004;
-      const growProgress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-      const eased = 1 - Math.pow(1 - growProgress, 3);
+        const isWater = cell.terrainType === "water";
+        const targetY = isWater ? WATER_Y : cell.terrainHeight * TERRAIN_SCALE;
+        const h = isWater ? 0.15 : Math.max(0.15, targetY);
 
-      // Gentle sway on Y-axis
-      const sway = Math.sin(elapsed * 1.2 + cube.col * 0.4 + cube.row * 0.6) * 0.015;
-
-      dummy.position.set(cube.x, cube.y * eased, cube.z);
-      dummy.scale.set(cube.w, Math.max(0.01, cube.h * eased), cube.d);
-      dummy.rotation.set(0, sway, 0);
-      dummy.updateMatrix();
-      meshRef.current.setMatrixAt(i, dummy.matrix);
+        dummy.position.set(cell.col * CELL_SIZE, (h / 2) * eased, cell.row * CELL_SIZE);
+        dummy.scale.set(CELL_SIZE, Math.max(0.01, h * eased), CELL_SIZE);
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        terrainRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      terrainRef.current.instanceMatrix.needsUpdate = true;
     }
-    meshRef.current.instanceMatrix.needsUpdate = true;
+
+    if (treeRef.current) {
+      for (let i = 0; i < treeCubes.length; i++) {
+        const cube = treeCubes[i];
+        const delay = cube.col * 0.006 + cube.row * 0.003 + TREE_DELAY;
+        const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
+        const eased = 1 - Math.pow(1 - progress, 3);
+
+        const sway = Math.sin(elapsed * 1.2 + cube.col * 0.4 + cube.row * 0.6) * 0.015;
+
+        dummy.position.set(cube.x, cube.y * eased, cube.z);
+        dummy.scale.set(cube.w, Math.max(0.01, cube.h * eased), cube.d);
+        dummy.rotation.set(0, sway, 0);
+        dummy.updateMatrix();
+        treeRef.current.setMatrixAt(i, dummy.matrix);
+      }
+      treeRef.current.instanceMatrix.needsUpdate = true;
+    }
   });
+
+  const handlePointerMove = useCallback(
+    (e: ThreeEvent<PointerEvent>) => {
+      e.stopPropagation();
+      const id = e.instanceId;
+      if (id !== undefined && id < cells.length && cells[id].count > 0) {
+        onHover?.(cells[id], { x: e.clientX, y: e.clientY });
+      } else {
+        onHover?.(null);
+      }
+    },
+    [cells, onHover]
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    onHover?.(null);
+  }, [onHover]);
 
   return (
     <>
-      {/* Base grid */}
-      <instancedMesh ref={baseRef} args={[undefined, undefined, days.length]}>
+      <instancedMesh
+        ref={terrainRef}
+        args={[undefined, undefined, cells.length]}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
+      >
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial />
       </instancedMesh>
 
-      {/* Tree cubes */}
       {treeCubes.length > 0 && (
-        <instancedMesh ref={meshRef} args={[undefined, undefined, treeCubes.length]}>
+        <instancedMesh ref={treeRef} args={[undefined, undefined, treeCubes.length]}>
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial />
         </instancedMesh>
