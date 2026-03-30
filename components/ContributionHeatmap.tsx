@@ -55,7 +55,7 @@ function YearGrid({ year }: { year: ContributionYear }) {
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-3">
-        <span className="w-10 shrink-0 text-right text-xs font-medium text-gray-400">
+        <span className="w-10 shrink-0 text-right text-xs font-medium text-gray-600">
           {year.year}
         </span>
         <div className="flex flex-col gap-0.5">
@@ -64,7 +64,7 @@ function YearGrid({ year }: { year: ContributionYear }) {
             {Array.from({ length: year.weeks.length }).map((_, col) => {
               const label = monthLabels.find((m) => m.col === col);
               return (
-                <div key={col} className="h-3 w-[11px] text-[9px] leading-none text-gray-400">
+                <div key={col} className="h-3 w-[11px] text-[9px] leading-none text-gray-600">
                   {label?.label ?? ""}
                 </div>
               );
@@ -101,7 +101,7 @@ export function ContributionHeatmap({ years }: Props) {
   if (years.length === 0 || years.every((y) => y.total === 0)) {
     return (
       <div className="flex h-full w-full items-center justify-center">
-        <p className="text-lg text-gray-400">
+        <p className="text-lg text-gray-600">
           No contributions yet — start planting seeds!
         </p>
       </div>
