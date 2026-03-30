@@ -96,7 +96,7 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
+    <div className="relative h-screen w-screen overflow-hidden bg-[#0a0f1a]">
       {/* 2D Heatmap — animated in/out */}
       <AnimatePresence>
         {!is3D && (
@@ -140,13 +140,13 @@ export function VisualizationShell({ data }: Props) {
       {/* Back link */}
       <a
         href="/"
-        className="absolute left-4 top-4 z-10 rounded-lg bg-white/80 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-white"
+        className="absolute left-4 top-4 z-10 rounded-lg bg-white/10 px-3 py-1.5 text-sm font-medium text-gray-300 shadow-sm backdrop-blur transition-colors hover:bg-white/20"
       >
         ← Try another
       </a>
 
       {/* Username badge */}
-      <div className="absolute right-4 top-4 z-10 rounded-lg bg-white/80 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur">
+      <div className="absolute right-4 top-4 z-10 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-gray-300 shadow-sm backdrop-blur">
         {data.username}&apos;s forest
       </div>
 

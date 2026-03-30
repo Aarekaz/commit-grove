@@ -28,10 +28,12 @@ export function ForestScene({ cells, mode, numCols, onDayHover }: Props) {
           near: 0.1,
           far: 1000,
         }}
-        style={{ background: "#f6f8fa" }}
+        style={{ background: "#0a0f1a" }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[10, 20, 10]} intensity={0.8} castShadow />
+        <fog attach="fog" args={["#0a0f1a", 30, 80]} />
+        <ambientLight intensity={0.35} />
+        <directionalLight position={[15, 25, 10]} intensity={1.2} color="#ffeedd" castShadow />
+        <directionalLight position={[-10, 10, -10]} intensity={0.3} color="#aaccff" />
 
         <group position={[-centerX, 0, -centerZ]}>
           {mode === "forest" && <VoxelForest cells={cells} onHover={onDayHover} />}
