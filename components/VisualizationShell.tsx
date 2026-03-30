@@ -130,7 +130,7 @@ export function VisualizationShell({ data }: Props) {
           <ForestScene
             cells={visibleCells}
             mode={mode}
-            numCols={visibleWeeks}
+            numCols={visibleCells.length > 0 ? Math.max(...visibleCells.map((c) => c.col)) + 1 : 0}
             onDayHover={handleDayHover}
           />
         </div>
