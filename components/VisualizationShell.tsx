@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import type { ContributionData, ViewMode } from "@/lib/types";
+import type { ContributionData, ContributionDay, ViewMode } from "@/lib/types";
 import { flattenYearDays } from "@/lib/transform";
 import { ContributionHeatmap } from "./ContributionHeatmap";
 import { ForestScene } from "./ForestScene";
 import { ViewToggle } from "./ViewToggle";
+import { TimelineControls } from "./TimelineControls";
+import { HoverInfo } from "./HoverInfo";
 
 type Props = {
   data: ContributionData;
@@ -15,9 +17,77 @@ type Props = {
 export function VisualizationShell({ data }: Props) {
   const [mode, setMode] = useState<ViewMode>("grid");
   const [selectedYear, setSelectedYear] = useState(data.years[0]?.year);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const yearNumbers = data.years.map((y) => y.year);
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
+  const maxWeeks = selectedYearData?.weeks.length ?? 0;
+
+  const [visibleWeeks, setVisibleWeeks] = useState(maxWeeks);
+
+  // Reset visible weeks when year changes
+  const handleYearChange = useCallback(
+    (year: number) => {
+      setSelectedYear(year);
+      const yearData = data.years.find((y) => y.year === year);
+      setVisibleWeeks(yearData?.weeks.length ?? 0);
+      setIsPlaying(false);
+    },
+    [data.years]
+  );
+
+  // Handle timeline changes
+  const handleVisibleWeeksChange = useCallback(
+    (value: number) => {
+      if (value === -1) {
+        // Increment signal from play timer
+        setVisibleWeeks((prev) => {
+          if (prev >= maxWeeks) {
+            setIsPlaying(false);
+            return maxWeeks;
+          }
+          return prev + 1;
+        });
+      } else {
+        setVisibleWeeks(value);
+      }
+    },
+    [maxWeeks]
+  );
+
+  const handlePlayToggle = useCallback(() => {
+    setIsPlaying((prev) => {
+      if (!prev && visibleWeeks >= maxWeeks) {
+        // Restart from beginning
+        setVisibleWeeks(0);
+      }
+      return !prev;
+    });
+  }, [visibleWeeks, maxWeeks]);
+
+  // Filter days to only show visible weeks
+  const visibleDays = useMemo(() => {
+    if (!selectedYearData) return [];
+    const allDays = flattenYearDays(selectedYearData);
+    return allDays.filter((d) => d.col < visibleWeeks);
+  }, [selectedYearData, visibleWeeks]);
+
+  // 3D tooltip state
+  const [hoveredDay, setHoveredDay] = useState<{
+    day: ContributionDay;
+    position: { x: number; y: number };
+  } | null>(null);
+
+  const handleDayHover = useCallback(
+    (day: ContributionDay | null, event?: { x: number; y: number }) => {
+      if (day && event && day.count > 0) {
+        setHoveredDay({ day, position: event });
+      } else {
+        setHoveredDay(null);
+      }
+    },
+    []
+  );
 
   const is3D = mode === "forest" || mode === "city";
 
@@ -50,11 +120,17 @@ export function VisualizationShell({ data }: Props) {
           }}
         >
           <ForestScene
-            days={flattenYearDays(selectedYearData)}
+            days={visibleDays}
             mode={mode}
-            numCols={selectedYearData.weeks.length}
+            numCols={visibleWeeks}
+            onDayHover={handleDayHover}
           />
         </div>
+      )}
+
+      {/* 3D Tooltip */}
+      {is3D && hoveredDay && (
+        <HoverInfo day={hoveredDay.day} position={hoveredDay.position} />
       )}
 
       {/* Back link */}
@@ -76,8 +152,19 @@ export function VisualizationShell({ data }: Props) {
         onModeChange={setMode}
         years={yearNumbers}
         selectedYear={selectedYear}
-        onYearChange={setSelectedYear}
+        onYearChange={handleYearChange}
       />
+
+      {/* Timeline controls (3D modes only) */}
+      {is3D && maxWeeks > 0 && (
+        <TimelineControls
+          maxWeeks={maxWeeks}
+          visibleWeeks={visibleWeeks}
+          onVisibleWeeksChange={handleVisibleWeeksChange}
+          isPlaying={isPlaying}
+          onPlayToggle={handlePlayToggle}
+        />
+      )}
     </div>
   );
 }
