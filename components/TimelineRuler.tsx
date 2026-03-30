@@ -13,9 +13,9 @@ type Props = {
   onYearChange: (year: number) => void;
 };
 
-const MONTHS_SHORT = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+const MONTHS = [
+  "J", "F", "M", "A", "M", "J",
+  "J", "A", "S", "O", "N", "D",
 ];
 
 export function TimelineRuler({
@@ -32,7 +32,6 @@ export function TimelineRuler({
   const dragging = useRef(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Play timer
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -51,7 +50,6 @@ export function TimelineRuler({
     return clearTimer;
   }, [isPlaying, clearTimer, onVisibleWeeksChange]);
 
-  // Drag-to-scrub on the ruler track
   const updateFromPointer = useCallback(
     (clientY: number) => {
       if (!trackRef.current) return;
@@ -83,110 +81,116 @@ export function TimelineRuler({
     dragging.current = false;
   }, []);
 
-  // Generate month tick marks for the current year
-  const monthTicks = [];
-  for (let m = 0; m < 12; m++) {
-    const weekOfMonth = Math.round((m / 12) * maxWeeks);
-    if (weekOfMonth <= maxWeeks) {
-      monthTicks.push({ label: MONTHS_SHORT[m], position: weekOfMonth / maxWeeks });
-    }
-  }
-
-  // Week ticks (every week, small marks)
-  const weekTicks = [];
-  for (let w = 0; w < maxWeeks; w++) {
-    weekTicks.push(w / maxWeeks);
-  }
-
   const progress = maxWeeks > 0 ? visibleWeeks / maxWeeks : 0;
 
   return (
-    <div className="absolute right-6 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-4">
-      {/* Year pills */}
-      <div className="flex flex-col gap-1 rounded-xl bg-white/80 p-1 shadow-lg backdrop-blur">
-        {years.map((year) => (
-          <button
-            key={year}
-            onClick={() => onYearChange(year)}
-            className={`rounded-lg px-2.5 py-1 text-xs font-medium tabular-nums transition-colors ${
-              selectedYear === year
-                ? "bg-gray-900 text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-900"
-            }`}
-          >
-            {year}
-          </button>
-        ))}
-      </div>
+    <div className="absolute right-5 top-1/2 z-10 -translate-y-1/2">
+      <div className="flex flex-col items-center rounded-2xl border border-gray-200/60 bg-white/70 shadow-2xl shadow-black/5 backdrop-blur-xl">
 
-      {/* Ruler track */}
-      <div className="flex flex-col items-center gap-2 rounded-xl bg-white/80 p-2 shadow-lg backdrop-blur">
-        {/* Play/Pause button */}
+        {/* Play/Pause — top cap */}
         <button
           onClick={onPlayToggle}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-gray-600 transition-colors hover:bg-gray-100"
+          className="flex h-10 w-full items-center justify-center border-b border-gray-200/40 transition-colors hover:bg-gray-50/50"
         >
           {isPlaying ? (
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-              <rect x="1" y="0" width="3" height="10" rx="0.5" />
-              <rect x="6" y="0" width="3" height="10" rx="0.5" />
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-700">
+              <line x1="3" y1="1" x2="3" y2="11" />
+              <line x1="7" y1="1" x2="7" y2="11" />
             </svg>
           ) : (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor">
-              <path d="M1 0.5v11l8.5-5.5z" />
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" className="ml-0.5 text-gray-700">
+              <path d="M1 1.5v9l8-4.5z" />
             </svg>
           )}
         </button>
 
-        {/* Vertical ruler */}
-        <div
-          ref={trackRef}
-          className="relative w-8 cursor-pointer select-none"
-          style={{ height: "min(50vh, 320px)" }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-        >
-          {/* Center line */}
-          <div className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-gray-300" />
-
-          {/* Week ticks (fine) */}
-          {weekTicks.map((pos, i) => (
-            <div
-              key={`w${i}`}
-              className="absolute left-1/2 h-px -translate-x-1/2 bg-gray-300"
-              style={{
-                top: `${pos * 100}%`,
-                width: i % 4 === 0 ? "10px" : "4px",
-              }}
-            />
-          ))}
-
-          {/* Month ticks (major) + labels */}
-          {monthTicks.map(({ label, position }) => (
-            <div
-              key={label}
-              className="absolute left-0 flex items-center"
-              style={{ top: `${position * 100}%` }}
+        {/* Year pills */}
+        <div className="flex flex-col border-b border-gray-200/40 px-1.5 py-1.5">
+          {years.map((year) => (
+            <button
+              key={year}
+              onClick={() => onYearChange(year)}
+              className={`rounded-md px-2 py-0.5 text-[10px] font-semibold tabular-nums tracking-wide transition-all ${
+                selectedYear === year
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-400 hover:text-gray-700"
+              }`}
             >
-              <div className="h-px w-8 bg-gray-400" />
-              <span className="ml-1.5 text-[9px] font-medium leading-none text-gray-400">
-                {label}
-              </span>
-            </div>
+              {year}
+            </button>
           ))}
+        </div>
 
-          {/* Progress fill */}
+        {/* Ruler track */}
+        <div className="px-1.5 py-3">
           <div
-            className="absolute left-1/2 top-0 w-0.5 -translate-x-1/2 rounded-full bg-gray-900 transition-[height] duration-75"
-            style={{ height: `${progress * 100}%` }}
-          />
+            ref={trackRef}
+            className="relative cursor-pointer select-none"
+            style={{ height: "min(45vh, 280px)", width: "36px" }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+          >
+            {/* Track background line */}
+            <div className="absolute left-[10px] top-0 h-full w-px bg-gray-200" />
 
-          {/* Scrubber handle */}
-          <div
-            className="absolute left-1/2 h-2 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gray-900 shadow-md"
-            style={{ top: `${progress * 100}%` }}
-          />
+            {/* Progress fill */}
+            <div
+              className="absolute left-[10px] top-0 w-px bg-gray-900 transition-[height] duration-75"
+              style={{ height: `${progress * 100}%` }}
+            />
+
+            {/* Week ticks */}
+            {Array.from({ length: maxWeeks }).map((_, w) => {
+              const pos = w / maxWeeks;
+              const isMonthBoundary = w % 4 === 0;
+              return (
+                <div
+                  key={w}
+                  className="absolute bg-gray-300"
+                  style={{
+                    top: `${pos * 100}%`,
+                    left: isMonthBoundary ? "4px" : "7px",
+                    width: isMonthBoundary ? "12px" : "6px",
+                    height: "0.5px",
+                  }}
+                />
+              );
+            })}
+
+            {/* Month labels */}
+            {MONTHS.map((label, m) => {
+              const pos = ((m + 0.5) / 12) * 100;
+              return (
+                <span
+                  key={m}
+                  className="absolute font-mono text-[8px] font-medium leading-none text-gray-400"
+                  style={{
+                    top: `${pos}%`,
+                    left: "20px",
+                    transform: "translateY(-50%)",
+                  }}
+                >
+                  {label}
+                </span>
+              );
+            })}
+
+            {/* Scrubber */}
+            <div
+              className="absolute -translate-y-1/2"
+              style={{ top: `${progress * 100}%`, left: "3px" }}
+            >
+              <div className="relative flex items-center">
+                {/* Diamond handle */}
+                <div className="h-3.5 w-3.5 rotate-45 rounded-[2px] border-2 border-gray-900 bg-white shadow-sm" />
+              </div>
+            </div>
+
+            {/* End cap dot */}
+            <div className="absolute -bottom-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
+            <div className="absolute -top-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
+          </div>
         </div>
       </div>
     </div>
