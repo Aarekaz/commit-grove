@@ -85,35 +85,35 @@ export function TimelineRuler({
 
   return (
     <div className="absolute right-5 top-1/2 z-10 -translate-y-1/2">
-      <div className="flex flex-col items-center rounded-2xl border border-gray-200/60 bg-white/70 shadow-2xl shadow-black/5 backdrop-blur-xl">
+      <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black/20 backdrop-blur-xl">
 
         {/* Play/Pause — top cap */}
         <button
           onClick={onPlayToggle}
-          className="flex h-10 w-full items-center justify-center border-b border-gray-200/40 transition-colors hover:bg-gray-50/50"
+          className="flex h-10 w-full items-center justify-center border-b border-white/10 transition-colors hover:bg-white/5"
         >
           {isPlaying ? (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-700">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400">
               <line x1="3" y1="1" x2="3" y2="11" />
               <line x1="7" y1="1" x2="7" y2="11" />
             </svg>
           ) : (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" className="ml-0.5 text-gray-700">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" className="ml-0.5 text-gray-400">
               <path d="M1 1.5v9l8-4.5z" />
             </svg>
           )}
         </button>
 
         {/* Year pills */}
-        <div className="flex flex-col border-b border-gray-200/40 px-1.5 py-1.5">
+        <div className="flex flex-col border-b border-white/10 px-1.5 py-1.5">
           {years.map((year) => (
             <button
               key={year}
               onClick={() => onYearChange(year)}
               className={`rounded-md px-2 py-0.5 text-[10px] font-semibold tabular-nums tracking-wide transition-all ${
                 selectedYear === year
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-400 hover:text-gray-700"
+                  ? "bg-green-500 text-gray-950"
+                  : "text-gray-500 hover:text-gray-300"
               }`}
             >
               {year}
@@ -132,11 +132,11 @@ export function TimelineRuler({
             onPointerUp={handlePointerUp}
           >
             {/* Track background line */}
-            <div className="absolute left-[10px] top-0 h-full w-px bg-gray-200" />
+            <div className="absolute left-[10px] top-0 h-full w-px bg-white/15" />
 
             {/* Progress fill */}
             <div
-              className="absolute left-[10px] top-0 w-px bg-gray-900 transition-[height] duration-75"
+              className="absolute left-[10px] top-0 w-px bg-green-400 transition-[height] duration-75"
               style={{ height: `${progress * 100}%` }}
             />
 
@@ -147,7 +147,7 @@ export function TimelineRuler({
               return (
                 <div
                   key={w}
-                  className="absolute bg-gray-300"
+                  className="absolute bg-white/20"
                   style={{
                     top: `${pos * 100}%`,
                     left: isMonthBoundary ? "4px" : "7px",
@@ -164,7 +164,7 @@ export function TimelineRuler({
               return (
                 <span
                   key={m}
-                  className="absolute font-mono text-[8px] font-medium leading-none text-gray-400"
+                  className="absolute font-mono text-[8px] font-medium leading-none text-gray-500"
                   style={{
                     top: `${pos}%`,
                     left: "20px",
@@ -183,13 +183,13 @@ export function TimelineRuler({
             >
               <div className="relative flex items-center">
                 {/* Diamond handle */}
-                <div className="h-3.5 w-3.5 rotate-45 rounded-[2px] border-2 border-gray-900 bg-white shadow-sm" />
+                <div className="h-3.5 w-3.5 rotate-45 rounded-[2px] border-2 border-green-400 bg-gray-950 shadow-sm shadow-green-400/20" />
               </div>
             </div>
 
             {/* End cap dot */}
-            <div className="absolute -bottom-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
-            <div className="absolute -top-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
+            <div className="absolute -bottom-1 left-[8px] h-1.5 w-1.5 rounded-full bg-white/20" />
+            <div className="absolute -top-1 left-[8px] h-1.5 w-1.5 rounded-full bg-white/20" />
           </div>
         </div>
       </div>

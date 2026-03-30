@@ -1,11 +1,11 @@
 import type { ContributionLevel } from "./types";
 
 export const LEVEL_COLORS: Record<ContributionLevel, string> = {
-  0: "#1b1f27",
-  1: "#0e4429",
-  2: "#006d32",
-  3: "#26a641",
-  4: "#39d353",
+  0: "#ebedf0",
+  1: "#9be9a8",
+  2: "#40c463",
+  3: "#30a14e",
+  4: "#216e39",
 };
 
 export const LEVEL_COLORS_RGB: Record<ContributionLevel, [number, number, number]> = {
