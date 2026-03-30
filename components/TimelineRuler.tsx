@@ -92,7 +92,7 @@ export function TimelineRuler({
   const progress = maxWeeks > 0 ? visibleWeeks / maxWeeks : 0;
 
   return (
-    <div className="absolute right-5 top-1/2 z-10 -translate-y-1/2">
+    <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
       <div className="flex flex-col items-center rounded-2xl border border-gray-200/60 bg-white/80 shadow-xl backdrop-blur-xl">
 
         {/* Play/Pause */}
