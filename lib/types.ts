@@ -21,3 +21,10 @@ export type ContributionData = {
 };
 
 export type ViewMode = "grid" | "forest" | "city";
+
+export type TerrainType = "water" | "shoreline" | "land";
+
+export type TerrainCell = ContributionDay & {
+  terrainHeight: number;
+  terrainType: TerrainType;
+};

@@ -41,3 +41,14 @@ export const PARK_GREEN_RGB: [number, number, number][] = [
   [0.22, 0.55, 0.22],  // deep green
   [0.18, 0.48, 0.18],  // dark foliage
 ];
+
+// Terrain colors (forest mode)
+export const TERRAIN_LAND_RGB: [number, number, number] = [0.35, 0.54, 0.29];
+export const TERRAIN_SHORELINE_RGB: [number, number, number] = [0.54, 0.67, 0.42];
+export const TERRAIN_WATER_RGB: [number, number, number] = [0.29, 0.54, 0.69];
+export const TERRAIN_WATER_DEEP_RGB: [number, number, number] = [0.22, 0.44, 0.60];
+
+// City ground colors
+export const CITY_ROAD_RGB: [number, number, number] = [0.82, 0.82, 0.84];
+export const CITY_PAVEMENT_RGB: [number, number, number] = [0.53, 0.53, 0.56];
+export const CITY_WATER_RGB: [number, number, number] = [0.29, 0.54, 0.69];
