@@ -1,11 +1,43 @@
 "use client";
 
-import { useMemo } from "react";
-import { Canvas } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
 import { VoxelForest } from "./VoxelForest";
 import { CityGrid } from "./CityGrid";
+
+type CameraProps = { numCols: number };
+
+function CameraController({ numCols }: CameraProps) {
+  const { camera } = useThree();
+  const controlsRef = useRef<any>(null);
+
+  useEffect(() => {
+    const maxDim = Math.max(numCols, 7);
+    const zoom = Math.min(80, Math.max(20, (52 / Math.max(maxDim, 10)) * 35));
+    camera.zoom = zoom;
+    camera.position.set(20, 20, 20);
+    camera.updateProjectionMatrix();
+    if (controlsRef.current) {
+      controlsRef.current.target.set(0, 1, 0);
+      controlsRef.current.update();
+    }
+  }, [numCols, camera]);
+
+  return (
+    <OrbitControls
+      ref={controlsRef}
+      enablePan
+      enableZoom
+      enableRotate
+      minZoom={10}
+      maxZoom={120}
+      target={[0, 1, 0]}
+      makeDefault
+    />
+  );
+}
 
 type Props = {
   cells: TerrainCell[];
@@ -19,20 +51,12 @@ export function ForestScene({ cells, mode, numCols, onDayHover }: Props) {
   const centerX = numCols / 2;
   const centerZ = numRows / 2;
 
-  // Adapt zoom to grid size so it always fills the viewport
-  const zoom = useMemo(() => {
-    const maxDim = Math.max(numCols, numRows);
-    if (maxDim <= 0) return 40;
-    // Base zoom for a 52-week grid, scale up for smaller grids
-    return Math.min(80, Math.max(20, (52 / Math.max(maxDim, 10)) * 35));
-  }, [numCols, numRows]);
-
   return (
     <div className="h-full w-full">
       <Canvas
         orthographic
         camera={{
-          zoom,
+          zoom: 40,
           position: [20, 20, 20],
           near: 0.1,
           far: 1000,
@@ -48,15 +72,7 @@ export function ForestScene({ cells, mode, numCols, onDayHover }: Props) {
           {mode === "city" && <CityGrid cells={cells} onHover={onDayHover} />}
         </group>
 
-        <OrbitControls
-          enablePan
-          enableZoom
-          enableRotate
-          minZoom={10}
-          maxZoom={120}
-          target={[0, 1, 0]}
-          makeDefault
-        />
+        <CameraController numCols={numCols} />
       </Canvas>
     </div>
   );
