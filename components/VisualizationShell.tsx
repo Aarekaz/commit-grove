@@ -8,7 +8,7 @@ import { flattenYearDays } from "@/lib/transform";
 import { ContributionHeatmap } from "./ContributionHeatmap";
 import { ForestScene } from "./ForestScene";
 import { ViewToggle } from "./ViewToggle";
-import { TimelineControls } from "./TimelineControls";
+import { TimelineRuler } from "./TimelineRuler";
 import { HoverInfo } from "./HoverInfo";
 
 type Props = {
@@ -149,22 +149,19 @@ export function VisualizationShell({ data }: Props) {
       </div>
 
       {/* View toggle */}
-      <ViewToggle
-        mode={mode}
-        onModeChange={setMode}
-        years={yearNumbers}
-        selectedYear={selectedYear}
-        onYearChange={handleYearChange}
-      />
+      <ViewToggle mode={mode} onModeChange={setMode} />
 
-      {/* Timeline controls (3D modes only) */}
+      {/* Timeline ruler (3D modes only) */}
       {is3D && maxWeeks > 0 && (
-        <TimelineControls
+        <TimelineRuler
           maxWeeks={maxWeeks}
           visibleWeeks={visibleWeeks}
           onVisibleWeeksChange={handleVisibleWeeksChange}
           isPlaying={isPlaying}
           onPlayToggle={handlePlayToggle}
+          years={yearNumbers}
+          selectedYear={selectedYear}
+          onYearChange={handleYearChange}
         />
       )}
     </div>
