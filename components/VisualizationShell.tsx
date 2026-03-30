@@ -10,6 +10,7 @@ import { ForestScene } from "./ForestScene";
 import { ViewToggle } from "./ViewToggle";
 import { TimelineRuler } from "./TimelineRuler";
 import { HoverInfo } from "./HoverInfo";
+import { StatsOverlay } from "./StatsOverlay";
 
 type Props = {
   data: ContributionData;
@@ -149,6 +150,11 @@ export function VisualizationShell({ data }: Props) {
       <div className="absolute right-4 top-4 z-10 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-gray-300 shadow-sm backdrop-blur">
         {data.username}&apos;s forest
       </div>
+
+      {/* Stats */}
+      {is3D && (
+        <StatsOverlay data={data} selectedYear={selectedYear} />
+      )}
 
       {/* View toggle */}
       <ViewToggle mode={mode} onModeChange={setMode} />
