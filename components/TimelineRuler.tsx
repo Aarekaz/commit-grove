@@ -11,12 +11,16 @@ type Props = {
   years: number[];
   selectedYear: number;
   onYearChange: (year: number) => void;
+  speed: number;
+  onSpeedChange: (speed: number) => void;
 };
 
 const MONTHS = [
   "J", "F", "M", "A", "M", "J",
   "J", "A", "S", "O", "N", "D",
 ];
+
+const SPEEDS = [0.5, 1, 2, 4];
 
 export function TimelineRuler({
   maxWeeks,
@@ -27,6 +31,8 @@ export function TimelineRuler({
   years,
   selectedYear,
   onYearChange,
+  speed,
+  onSpeedChange,
 }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -39,16 +45,18 @@ export function TimelineRuler({
     }
   }, []);
 
+  // Play timer — interval varies by speed
   useEffect(() => {
     if (isPlaying) {
+      const interval = Math.round(200 / speed);
       intervalRef.current = setInterval(() => {
         onVisibleWeeksChange(-1);
-      }, 80);
+      }, interval);
     } else {
       clearTimer();
     }
     return clearTimer;
-  }, [isPlaying, clearTimer, onVisibleWeeksChange]);
+  }, [isPlaying, speed, clearTimer, onVisibleWeeksChange]);
 
   const updateFromPointer = useCallback(
     (clientY: number) => {
@@ -85,35 +93,52 @@ export function TimelineRuler({
 
   return (
     <div className="absolute right-5 top-1/2 z-10 -translate-y-1/2">
-      <div className="flex flex-col items-center rounded-2xl border border-white/10 bg-white/5 shadow-2xl shadow-black/20 backdrop-blur-xl">
+      <div className="flex flex-col items-center rounded-2xl border border-gray-200/60 bg-white/80 shadow-xl backdrop-blur-xl">
 
-        {/* Play/Pause — top cap */}
+        {/* Play/Pause */}
         <button
           onClick={onPlayToggle}
-          className="flex h-10 w-full items-center justify-center border-b border-white/10 transition-colors hover:bg-white/5"
+          className="flex h-9 w-full items-center justify-center border-b border-gray-200/40 transition-colors hover:bg-gray-100/50"
         >
           {isPlaying ? (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-400">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className="text-gray-600">
               <line x1="3" y1="1" x2="3" y2="11" />
               <line x1="7" y1="1" x2="7" y2="11" />
             </svg>
           ) : (
-            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" className="ml-0.5 text-gray-400">
+            <svg width="10" height="12" viewBox="0 0 10 12" fill="currentColor" className="ml-0.5 text-gray-600">
               <path d="M1 1.5v9l8-4.5z" />
             </svg>
           )}
         </button>
 
+        {/* Speed control */}
+        <div className="flex border-b border-gray-200/40 px-1 py-1">
+          {SPEEDS.map((s) => (
+            <button
+              key={s}
+              onClick={() => onSpeedChange(s)}
+              className={`rounded px-1.5 py-0.5 text-[9px] font-semibold tabular-nums transition-colors ${
+                speed === s
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-400 hover:text-gray-700"
+              }`}
+            >
+              {s}x
+            </button>
+          ))}
+        </div>
+
         {/* Year pills */}
-        <div className="flex flex-col border-b border-white/10 px-1.5 py-1.5">
+        <div className="flex flex-col border-b border-gray-200/40 px-1.5 py-1.5">
           {years.map((year) => (
             <button
               key={year}
               onClick={() => onYearChange(year)}
               className={`rounded-md px-2 py-0.5 text-[10px] font-semibold tabular-nums tracking-wide transition-all ${
                 selectedYear === year
-                  ? "bg-green-500 text-gray-950"
-                  : "text-gray-500 hover:text-gray-300"
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-400 hover:text-gray-700"
               }`}
             >
               {year}
@@ -126,32 +151,32 @@ export function TimelineRuler({
           <div
             ref={trackRef}
             className="relative cursor-pointer select-none"
-            style={{ height: "min(45vh, 280px)", width: "36px" }}
+            style={{ height: "min(40vh, 240px)", width: "36px" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
           >
-            {/* Track background line */}
-            <div className="absolute left-[10px] top-0 h-full w-px bg-white/15" />
+            {/* Track line */}
+            <div className="absolute left-[10px] top-0 h-full w-px bg-gray-200" />
 
             {/* Progress fill */}
             <div
-              className="absolute left-[10px] top-0 w-px bg-green-400 transition-[height] duration-75"
+              className="absolute left-[10px] top-0 w-px bg-green-500 transition-[height] duration-75"
               style={{ height: `${progress * 100}%` }}
             />
 
             {/* Week ticks */}
             {Array.from({ length: maxWeeks }).map((_, w) => {
               const pos = w / maxWeeks;
-              const isMonthBoundary = w % 4 === 0;
+              const isMajor = w % 4 === 0;
               return (
                 <div
                   key={w}
-                  className="absolute bg-white/20"
+                  className="absolute bg-gray-300"
                   style={{
                     top: `${pos * 100}%`,
-                    left: isMonthBoundary ? "4px" : "7px",
-                    width: isMonthBoundary ? "12px" : "6px",
+                    left: isMajor ? "4px" : "7px",
+                    width: isMajor ? "12px" : "6px",
                     height: "0.5px",
                   }}
                 />
@@ -159,37 +184,31 @@ export function TimelineRuler({
             })}
 
             {/* Month labels */}
-            {MONTHS.map((label, m) => {
-              const pos = ((m + 0.5) / 12) * 100;
-              return (
-                <span
-                  key={m}
-                  className="absolute font-mono text-[8px] font-medium leading-none text-gray-500"
-                  style={{
-                    top: `${pos}%`,
-                    left: "20px",
-                    transform: "translateY(-50%)",
-                  }}
-                >
-                  {label}
-                </span>
-              );
-            })}
+            {MONTHS.map((label, m) => (
+              <span
+                key={m}
+                className="absolute font-mono text-[8px] font-medium leading-none text-gray-400"
+                style={{
+                  top: `${((m + 0.5) / 12) * 100}%`,
+                  left: "20px",
+                  transform: "translateY(-50%)",
+                }}
+              >
+                {label}
+              </span>
+            ))}
 
-            {/* Scrubber */}
+            {/* Scrubber handle */}
             <div
               className="absolute -translate-y-1/2"
               style={{ top: `${progress * 100}%`, left: "3px" }}
             >
-              <div className="relative flex items-center">
-                {/* Diamond handle */}
-                <div className="h-3.5 w-3.5 rotate-45 rounded-[2px] border-2 border-green-400 bg-gray-950 shadow-sm shadow-green-400/20" />
-              </div>
+              <div className="h-3.5 w-3.5 rotate-45 rounded-[2px] border-2 border-green-500 bg-white shadow-sm" />
             </div>
 
-            {/* End cap dot */}
-            <div className="absolute -bottom-1 left-[8px] h-1.5 w-1.5 rounded-full bg-white/20" />
-            <div className="absolute -top-1 left-[8px] h-1.5 w-1.5 rounded-full bg-white/20" />
+            {/* End caps */}
+            <div className="absolute -top-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
+            <div className="absolute -bottom-1 left-[8px] h-1.5 w-1.5 rounded-full bg-gray-300" />
           </div>
         </div>
       </div>

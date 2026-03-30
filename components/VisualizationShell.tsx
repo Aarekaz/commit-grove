@@ -20,6 +20,7 @@ export function VisualizationShell({ data }: Props) {
   const [mode, setMode] = useState<ViewMode>("grid");
   const [selectedYear, setSelectedYear] = useState(data.years[0]?.year);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
 
   const yearNumbers = data.years.map((y) => y.year);
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
@@ -27,7 +28,22 @@ export function VisualizationShell({ data }: Props) {
 
   const [visibleWeeks, setVisibleWeeks] = useState(maxWeeks);
 
-  // Reset visible weeks when year changes
+  // Pre-compute terrain ONCE for the full year — never recompute on timeline scrub
+  const today = new Date().toISOString().slice(0, 10);
+  const fullTerrain = useMemo(() => {
+    if (!selectedYearData) return [];
+    const allDays = flattenYearDays(selectedYearData);
+    const pastDays = allDays.filter((d) => d.date <= today);
+    if (pastDays.length === 0) return [];
+    const numCols = Math.max(...pastDays.map((d) => d.col)) + 1;
+    return generateTerrain(pastDays, 7, numCols, data.username);
+  }, [selectedYearData, data.username, today]);
+
+  // Slice pre-computed terrain by visible weeks — cheap array filter, no recomputation
+  const visibleCells = useMemo(() => {
+    return fullTerrain.filter((c) => c.col < visibleWeeks);
+  }, [fullTerrain, visibleWeeks]);
+
   const handleYearChange = useCallback(
     (year: number) => {
       setSelectedYear(year);
@@ -38,11 +54,9 @@ export function VisualizationShell({ data }: Props) {
     [data.years]
   );
 
-  // Handle timeline changes
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
       if (value === -1) {
-        // Increment signal from play timer
         setVisibleWeeks((prev) => {
           if (prev >= maxWeeks) {
             setIsPlaying(false);
@@ -60,24 +74,13 @@ export function VisualizationShell({ data }: Props) {
   const handlePlayToggle = useCallback(() => {
     setIsPlaying((prev) => {
       if (!prev && visibleWeeks >= maxWeeks) {
-        // Restart from beginning
         setVisibleWeeks(0);
       }
       return !prev;
     });
   }, [visibleWeeks, maxWeeks]);
 
-  // Filter days: only past/present weeks for 3D (no empty future terrain)
-  const today = new Date().toISOString().slice(0, 10);
-  const terrainCells = useMemo(() => {
-    if (!selectedYearData) return [];
-    const allDays = flattenYearDays(selectedYearData);
-    const pastDays = allDays.filter((d) => d.date <= today);
-    const visible = pastDays.filter((d) => d.col < visibleWeeks);
-    return generateTerrain(visible, 7, visibleWeeks, data.username);
-  }, [selectedYearData, visibleWeeks, data.username, today]);
-
-  // 3D tooltip state
+  // 3D tooltip
   const [hoveredDay, setHoveredDay] = useState<{
     day: TerrainCell;
     position: { x: number; y: number };
@@ -85,7 +88,7 @@ export function VisualizationShell({ data }: Props) {
 
   const handleDayHover = useCallback(
     (day: TerrainCell | null, event?: { x: number; y: number }) => {
-      if (day && event && day.count > 0) {
+      if (day && event) {
         setHoveredDay({ day, position: event });
       } else {
         setHoveredDay(null);
@@ -97,11 +100,8 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
 
   return (
-    <div
-      className="relative h-screen w-screen overflow-hidden transition-colors duration-300"
-      style={{ backgroundColor: is3D ? "#0a0f1a" : "#f6f8fa" }}
-    >
-      {/* 2D Heatmap — animated in/out */}
+    <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
+      {/* 2D Heatmap */}
       <AnimatePresence>
         {!is3D && (
           <motion.div
@@ -117,7 +117,7 @@ export function VisualizationShell({ data }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 3D Scene — always mounted, visibility controlled by CSS */}
+      {/* 3D Scene — always mounted */}
       {selectedYearData && (
         <div
           className="absolute inset-0"
@@ -128,7 +128,7 @@ export function VisualizationShell({ data }: Props) {
           }}
         >
           <ForestScene
-            cells={terrainCells}
+            cells={visibleCells}
             mode={mode}
             numCols={visibleWeeks}
             onDayHover={handleDayHover}
@@ -144,28 +144,18 @@ export function VisualizationShell({ data }: Props) {
       {/* Back link */}
       <a
         href="/"
-        className={`absolute left-4 top-4 z-10 rounded-lg px-3 py-1.5 text-sm font-medium shadow-sm backdrop-blur transition-colors ${
-          is3D
-            ? "bg-white/10 text-gray-300 hover:bg-white/20"
-            : "bg-black/5 text-gray-600 hover:bg-black/10"
-        }`}
+        className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
       >
         ← Try another
       </a>
 
       {/* Username badge */}
-      <div
-        className={`absolute right-4 top-4 z-10 rounded-lg px-3 py-1.5 text-sm shadow-sm backdrop-blur ${
-          is3D ? "bg-white/10 text-gray-300" : "bg-black/5 text-gray-600"
-        }`}
-      >
+      <div className="absolute right-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur">
         {data.username}&apos;s forest
       </div>
 
       {/* Stats */}
-      {is3D && (
-        <StatsOverlay data={data} selectedYear={selectedYear} />
-      )}
+      {is3D && <StatsOverlay data={data} selectedYear={selectedYear} />}
 
       {/* View toggle */}
       <ViewToggle mode={mode} onModeChange={setMode} />
@@ -181,6 +171,8 @@ export function VisualizationShell({ data }: Props) {
           years={yearNumbers}
           selectedYear={selectedYear}
           onYearChange={handleYearChange}
+          speed={speed}
+          onSpeedChange={setSpeed}
         />
       )}
     </div>
