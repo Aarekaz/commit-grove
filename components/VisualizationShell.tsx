@@ -77,40 +77,45 @@ export function VisualizationShell({ data }: Props) {
   }, [totalCols]);
 
   const yearBuildInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const buildTargetRef = useRef(0);
+
+  const startBuildAnimation = useCallback((target: number) => {
+    if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+    buildTargetRef.current = target;
+    yearBuildInterval.current = setInterval(() => {
+      setVisibleWeeks((prev) => {
+        if (prev >= buildTargetRef.current) {
+          if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+          return buildTargetRef.current;
+        }
+        return prev + 1;
+      });
+    }, 40);
+  }, []);
 
   const handleYearChange = useCallback(
     (year: number) => {
       setSelectedYear(year);
       setIsPlaying(false);
-      // Trigger build animation for new year
       setVisibleWeeks(0);
+      // Need to wait for next render when fullTerrain updates
+      // so we trigger the build via a flag
     },
     []
   );
 
-  // When totalCols changes (year switch) and visibleWeeks is 0, auto-build
+  // When totalCols changes (year switch), auto-build
+  const prevTotalCols = useRef(totalCols);
   useEffect(() => {
     if (introPhase !== "ready") return;
-    if (visibleWeeks !== 0) return;
     if (totalCols === 0) return;
-
-    // Clear any existing interval
-    if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
-
-    yearBuildInterval.current = setInterval(() => {
-      setVisibleWeeks((prev) => {
-        if (prev >= totalCols) {
-          if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
-          return totalCols;
-        }
-        return prev + 1;
-      });
-    }, 40); // slightly faster than cinematic intro
-
-    return () => {
-      if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
-    };
-  }, [totalCols, introPhase, visibleWeeks]);
+    if (totalCols !== prevTotalCols.current) {
+      prevTotalCols.current = totalCols;
+      setVisibleWeeks(0);
+      // Small delay to let the mesh re-initialize with new data
+      setTimeout(() => startBuildAnimation(totalCols), 50);
+    }
+  }, [totalCols, introPhase, startBuildAnimation]);
 
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
