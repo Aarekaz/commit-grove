@@ -73,7 +73,7 @@ export function CinematicOverlay({ username, currentWeek, maxWeeks, visible, onS
           {/* Skip button */}
           <motion.button
             onClick={onSkip}
-            className="mt-4 rounded-lg px-4 py-1.5 text-xs font-medium text-gray-400 transition-colors hover:text-gray-700"
+            className="mt-4 min-h-[44px] rounded-lg px-6 py-2 text-xs font-medium text-gray-400 transition-colors hover:text-gray-700"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 2 }}

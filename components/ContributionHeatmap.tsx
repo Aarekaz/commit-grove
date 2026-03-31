@@ -108,11 +108,13 @@ export function ContributionHeatmap({ years }: Props) {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center overflow-auto p-8">
-      <div className="flex flex-col gap-6">
-        {years.map((year) => (
-          <YearGrid key={year.year} year={year} />
-        ))}
+    <div className="flex h-full w-full items-center justify-center overflow-auto p-4 sm:p-8">
+      <div className="overflow-x-auto w-full">
+        <div className="flex flex-col gap-6 min-w-max mx-auto">
+          {years.map((year) => (
+            <YearGrid key={year.year} year={year} />
+          ))}
+        </div>
       </div>
     </div>
   );

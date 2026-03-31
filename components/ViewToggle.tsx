@@ -21,7 +21,7 @@ export function ViewToggle({ mode, onModeChange }: Props) {
           <button
             key={m.value}
             onClick={() => onModeChange(m.value)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+            className={`min-h-[44px] whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:min-h-0 ${
               mode === m.value
                 ? "bg-gray-900 text-white shadow-sm"
                 : "text-gray-500 hover:text-gray-900"

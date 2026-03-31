@@ -101,7 +101,7 @@ export function TimelineRuler({
             <button
               onClick={() => prevYear && onYearChange(prevYear)}
               disabled={!prevYear}
-              className="rounded px-1.5 py-0.5 text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
+              className="flex h-10 w-8 items-center justify-center rounded text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20 sm:h-auto sm:w-auto sm:px-1.5 sm:py-0.5"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M8 1L3 6l5 5" /></svg>
             </button>
@@ -111,7 +111,7 @@ export function TimelineRuler({
             <button
               onClick={() => nextYear && onYearChange(nextYear)}
               disabled={!nextYear}
-              className="rounded px-1.5 py-0.5 text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
+              className="flex h-10 w-8 items-center justify-center rounded text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20 sm:h-auto sm:w-auto sm:px-1.5 sm:py-0.5"
             >
               <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor"><path d="M4 1l5 5-5 5" /></svg>
             </button>
@@ -121,7 +121,7 @@ export function TimelineRuler({
           <div className="flex items-center gap-2">
             <button
               onClick={onPlayToggle}
-              className="flex h-7 w-7 items-center justify-center rounded-md transition-colors hover:bg-gray-100"
+              className="flex h-10 w-10 items-center justify-center rounded-md transition-colors hover:bg-gray-100 sm:h-7 sm:w-7"
             >
               {isPlaying ? (
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" className="text-gray-600">
@@ -191,8 +191,11 @@ export function TimelineRuler({
 
         {/* Month labels */}
         <div className="mt-0.5 flex justify-between px-1">
-          {MONTHS.map((label) => (
-            <span key={label} className="text-[9px] font-medium text-gray-400">
+          {MONTHS.map((label, i) => (
+            <span
+              key={label}
+              className={`text-[9px] font-medium text-gray-400 ${i % 2 !== 0 ? "hidden min-[480px]:inline" : ""}`}
+            >
               {label}
             </span>
           ))}

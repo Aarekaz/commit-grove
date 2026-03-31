@@ -47,14 +47,14 @@ export function StatsOverlay({ data, selectedYear }: Props) {
   });
 
   return (
-    <div className="absolute left-5 bottom-6 z-10 flex flex-col gap-1">
+    <div className="absolute bottom-20 left-4 z-10 flex flex-col gap-1 sm:bottom-6 sm:left-5">
       <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums text-gray-900">
+        <span className="text-2xl font-bold tabular-nums text-gray-900 sm:text-3xl">
           {stats.total.toLocaleString()}
         </span>
         <span className="text-xs font-medium text-gray-500">commits</span>
       </div>
-      <div className="flex gap-4 text-[11px] text-gray-500">
+      <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-gray-500 sm:gap-4">
         <span>
           <span className="font-semibold tabular-nums text-gray-400">{stats.activeDays}</span> active days
         </span>

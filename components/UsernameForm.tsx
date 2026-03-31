@@ -44,25 +44,25 @@ export function UsernameForm({ hints }: UsernameFormProps) {
         <button
           type="submit"
           disabled={!username.trim()}
-          className="rounded-xl bg-green-500 py-3 text-base font-semibold text-gray-950 transition-all hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-30"
+          className="min-h-[44px] rounded-xl bg-green-500 py-3 text-base font-semibold text-gray-950 transition-all hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-30"
         >
           Grow my forest
         </button>
       </form>
 
       {hints && hints.length > 0 && (
-        <p className="text-xs text-gray-600">
-          Try{" "}
+        <p className="flex flex-wrap items-center justify-center gap-x-1 text-xs text-gray-600">
+          <span>Try</span>
           {hints.map((hint, i) => (
-            <span key={hint}>
+            <span key={hint} className="flex items-center gap-x-1">
               <button
                 type="button"
                 onClick={() => router.push(`/${hint}`)}
-                className="text-gray-400 underline decoration-gray-700 underline-offset-2 transition-colors hover:text-green-400"
+                className="min-h-[44px] px-1 text-gray-400 underline decoration-gray-700 underline-offset-2 transition-colors hover:text-green-400"
               >
                 {hint}
               </button>
-              {i < hints.length - 1 && " · "}
+              {i < hints.length - 1 && <span className="text-gray-700">·</span>}
             </span>
           ))}
         </p>
