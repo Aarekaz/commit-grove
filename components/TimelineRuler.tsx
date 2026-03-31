@@ -17,8 +17,8 @@ type Props = {
 };
 
 const SPEEDS = [0.5, 1, 2, 4];
-const TICK_WIDTH = 12;
-const RULER_VIEW_WIDTH = 550;
+const TICK_WIDTH = 18;
+const RULER_VIEW_WIDTH = 750;
 
 export function TimelineRuler({
   maxWeeks,
@@ -119,10 +119,10 @@ export function TimelineRuler({
         style={{ left: w * TICK_WIDTH }}
       >
         <div
-          className={`w-px ${isMajor ? "h-5 bg-gray-400" : "h-2.5 bg-gray-300/60"}`}
+          className={`w-px ${isMajor ? "h-7 bg-gray-500" : "h-3 bg-gray-300/70"}`}
         />
         {monthLabel !== undefined && (
-          <span className="absolute top-6 whitespace-nowrap text-[8px] font-semibold tracking-wider text-gray-400 uppercase">
+          <span className="absolute top-8 whitespace-nowrap text-[9px] font-semibold tracking-wider text-gray-400 uppercase">
             {MONTHS[monthLabel]}
           </span>
         )}
@@ -142,7 +142,7 @@ export function TimelineRuler({
           >
             <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor"><path d="M5.5 0.5L1 5l4.5 4.5" /></svg>
           </button>
-          <span className="min-w-[3rem] text-center text-sm font-bold tabular-nums text-gray-800">
+          <span className="min-w-[3.5rem] text-center text-base font-bold tabular-nums text-gray-800">
             {selectedYear}
           </span>
           <button
@@ -157,7 +157,7 @@ export function TimelineRuler({
         {/* Compass ruler */}
         <div
           className="relative cursor-grab overflow-hidden select-none active:cursor-grabbing"
-          style={{ width: `min(${RULER_VIEW_WIDTH}px, 60vw)`, height: 36 }}
+          style={{ width: `min(${RULER_VIEW_WIDTH}px, 65vw)`, height: 44 }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -169,8 +169,8 @@ export function TimelineRuler({
 
           {/* Center needle */}
           <div className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2">
-            <div className="mx-auto h-5 w-0.5 rounded-full bg-green-500" />
-            <div className="mx-auto mt-px h-2 w-2 rotate-45 bg-green-500" />
+            <div className="mx-auto h-7 w-[3px] rounded-full bg-green-500 shadow-sm shadow-green-500/40" />
+            <div className="mx-auto mt-0.5 h-2.5 w-2.5 rotate-45 bg-green-500 shadow-sm shadow-green-500/40" />
           </div>
 
           {/* Scrolling ruler track */}
