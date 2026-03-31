@@ -76,21 +76,41 @@ export function VisualizationShell({ data }: Props) {
     setIntroPhase("ready");
   }, [totalCols]);
 
+  const yearBuildInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const handleYearChange = useCallback(
     (year: number) => {
       setSelectedYear(year);
-      // visibleWeeks will update when fullTerrain recomputes via totalCols
       setIsPlaying(false);
+      // Trigger build animation for new year
+      setVisibleWeeks(0);
     },
     []
   );
 
-  // Reset visibleWeeks when year changes (totalCols changes)
+  // When totalCols changes (year switch) and visibleWeeks is 0, auto-build
   useEffect(() => {
-    if (introPhase === "ready") {
-      setVisibleWeeks(totalCols);
-    }
-  }, [totalCols, introPhase]);
+    if (introPhase !== "ready") return;
+    if (visibleWeeks !== 0) return;
+    if (totalCols === 0) return;
+
+    // Clear any existing interval
+    if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+
+    yearBuildInterval.current = setInterval(() => {
+      setVisibleWeeks((prev) => {
+        if (prev >= totalCols) {
+          if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+          return totalCols;
+        }
+        return prev + 1;
+      });
+    }, 40); // slightly faster than cinematic intro
+
+    return () => {
+      if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+    };
+  }, [totalCols, introPhase, visibleWeeks]);
 
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
