@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ContributionData, TerrainCell, ViewMode } from "@/lib/types";
 import { generateTerrain } from "@/lib/terrain";
@@ -11,13 +11,17 @@ import { ViewToggle } from "./ViewToggle";
 import { TimelineRuler } from "./TimelineRuler";
 import { HoverInfo } from "./HoverInfo";
 import { StatsOverlay } from "./StatsOverlay";
+import { CinematicOverlay } from "./CinematicOverlay";
 
 type Props = {
   data: ContributionData;
 };
 
+type IntroPhase = "cinematic" | "ready";
+
 export function VisualizationShell({ data }: Props) {
-  const [mode, setMode] = useState<ViewMode>("grid");
+  const [introPhase, setIntroPhase] = useState<IntroPhase>("cinematic");
+  const [mode, setMode] = useState<ViewMode>("forest"); // start in forest for cinematic
   const [selectedYear, setSelectedYear] = useState(data.years[0]?.year);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -26,9 +30,42 @@ export function VisualizationShell({ data }: Props) {
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
   const maxWeeks = selectedYearData?.weeks.length ?? 0;
 
-  const [visibleWeeks, setVisibleWeeks] = useState(maxWeeks);
+  const [visibleWeeks, setVisibleWeeks] = useState(0); // start at 0 for cinematic
 
-  // Pre-compute terrain ONCE for the full year — never recompute on timeline scrub
+  // Cinematic auto-play
+  const cinematicInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (introPhase !== "cinematic") return;
+
+    // Small delay before starting the cinematic
+    const startDelay = setTimeout(() => {
+      cinematicInterval.current = setInterval(() => {
+        setVisibleWeeks((prev) => {
+          if (prev >= maxWeeks) {
+            // Cinematic finished
+            if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+            setTimeout(() => setIntroPhase("ready"), 600);
+            return maxWeeks;
+          }
+          return prev + 1;
+        });
+      }, 60); // Fast playback for cinematic
+    }, 800);
+
+    return () => {
+      clearTimeout(startDelay);
+      if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+    };
+  }, [introPhase, maxWeeks]);
+
+  const handleSkipIntro = useCallback(() => {
+    if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+    setVisibleWeeks(maxWeeks);
+    setIntroPhase("ready");
+  }, [maxWeeks]);
+
+  // Pre-compute terrain ONCE for the full year
   const today = new Date().toISOString().slice(0, 10);
   const fullTerrain = useMemo(() => {
     if (!selectedYearData) return [];
@@ -39,10 +76,12 @@ export function VisualizationShell({ data }: Props) {
     return generateTerrain(pastDays, 7, numCols, data.username);
   }, [selectedYearData, data.username, today]);
 
-  // Slice pre-computed terrain by visible weeks — cheap array filter, no recomputation
+  // Slice pre-computed terrain by visible weeks
   const visibleCells = useMemo(() => {
     return fullTerrain.filter((c) => c.col < visibleWeeks);
   }, [fullTerrain, visibleWeeks]);
+
+  const actualNumCols = visibleCells.length > 0 ? Math.max(...visibleCells.map((c) => c.col)) + 1 : 0;
 
   const handleYearChange = useCallback(
     (year: number) => {
@@ -88,22 +127,24 @@ export function VisualizationShell({ data }: Props) {
 
   const handleDayHover = useCallback(
     (day: TerrainCell | null, event?: { x: number; y: number }) => {
+      if (introPhase === "cinematic") return; // no tooltips during cinematic
       if (day && event) {
         setHoveredDay({ day, position: event });
       } else {
         setHoveredDay(null);
       }
     },
-    []
+    [introPhase]
   );
 
   const is3D = mode === "forest" || mode === "city";
+  const showControls = introPhase === "ready";
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
       {/* 2D Heatmap */}
       <AnimatePresence>
-        {!is3D && (
+        {showControls && !is3D && (
           <motion.div
             key="grid"
             className="absolute inset-0 z-[1]"
@@ -117,64 +158,108 @@ export function VisualizationShell({ data }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 3D Scene — always mounted */}
+      {/* 3D Scene — always visible during cinematic + 3D modes */}
       {selectedYearData && (
         <div
           className="absolute inset-0"
           style={{
-            opacity: is3D ? 1 : 0,
-            pointerEvents: is3D ? "auto" : "none",
+            opacity: introPhase === "cinematic" || is3D ? 1 : 0,
+            pointerEvents: introPhase === "cinematic" || is3D ? "auto" : "none",
             transition: "opacity 0.3s ease-out",
           }}
         >
           <ForestScene
             cells={visibleCells}
-            mode={mode}
-            numCols={visibleCells.length > 0 ? Math.max(...visibleCells.map((c) => c.col)) + 1 : 0}
+            mode={mode === "grid" ? "forest" : mode}
+            numCols={actualNumCols}
             onDayHover={handleDayHover}
           />
         </div>
       )}
 
-      {/* 3D Tooltip */}
-      {is3D && hoveredDay && (
+      {/* Cinematic overlay */}
+      <CinematicOverlay
+        username={data.username}
+        currentWeek={visibleWeeks}
+        maxWeeks={maxWeeks}
+        visible={introPhase === "cinematic"}
+        onSkip={handleSkipIntro}
+      />
+
+      {/* 3D Tooltip — only after cinematic */}
+      {showControls && is3D && hoveredDay && (
         <HoverInfo day={hoveredDay.day} position={hoveredDay.position} />
       )}
 
-      {/* Back link */}
-      <a
-        href="/"
-        className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
-      >
-        ← Try another
-      </a>
+      {/* Controls — fade in after cinematic */}
+      <AnimatePresence>
+        {showControls && (
+          <>
+            {/* Back link */}
+            <motion.a
+              href="/"
+              className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              ← Try another
+            </motion.a>
 
-      {/* Username badge */}
-      <div className="absolute right-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur">
-        {data.username}&apos;s forest
-      </div>
+            {/* Username badge */}
+            <motion.div
+              className="absolute right-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              {data.username}&apos;s forest
+            </motion.div>
 
-      {/* Stats */}
-      {is3D && <StatsOverlay data={data} selectedYear={selectedYear} />}
+            {/* Stats */}
+            {is3D && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <StatsOverlay data={data} selectedYear={selectedYear} />
+              </motion.div>
+            )}
 
-      {/* View toggle */}
-      <ViewToggle mode={mode} onModeChange={setMode} />
+            {/* View toggle */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <ViewToggle mode={mode} onModeChange={setMode} />
+            </motion.div>
 
-      {/* Timeline ruler (3D modes only) */}
-      {is3D && maxWeeks > 0 && (
-        <TimelineRuler
-          maxWeeks={maxWeeks}
-          visibleWeeks={visibleWeeks}
-          onVisibleWeeksChange={handleVisibleWeeksChange}
-          isPlaying={isPlaying}
-          onPlayToggle={handlePlayToggle}
-          years={yearNumbers}
-          selectedYear={selectedYear}
-          onYearChange={handleYearChange}
-          speed={speed}
-          onSpeedChange={setSpeed}
-        />
-      )}
+            {/* Timeline ruler (3D modes only) */}
+            {is3D && maxWeeks > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <TimelineRuler
+                  maxWeeks={maxWeeks}
+                  visibleWeeks={visibleWeeks}
+                  onVisibleWeeksChange={handleVisibleWeeksChange}
+                  isPlaying={isPlaying}
+                  onPlayToggle={handlePlayToggle}
+                  years={yearNumbers}
+                  selectedYear={selectedYear}
+                  onYearChange={handleYearChange}
+                  speed={speed}
+                  onSpeedChange={setSpeed}
+                />
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
