@@ -14,7 +14,7 @@ import {
 
 type Props = {
   cells: TerrainCell[];
-  onHover?: (cell: TerrainCell | null, pos?: { x: number; y: number }) => void;
+  onHover?: (cell: TerrainCell | null) => void;
 };
 
 const CELL_SIZE = 1;
@@ -196,8 +196,7 @@ export function VoxelForest({ cells, onHover }: Props) {
       e.stopPropagation();
       const id = e.instanceId;
       if (id !== undefined && id < cells.length && cells[id].terrainType !== "water") {
-        const nativeEvent = e.nativeEvent ?? e;
-        onHover?.(cells[id], { x: (nativeEvent as PointerEvent).clientX, y: (nativeEvent as PointerEvent).clientY });
+        onHover?.(cells[id]);
       } else {
         onHover?.(null);
       }

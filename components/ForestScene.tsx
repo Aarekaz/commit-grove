@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
@@ -51,8 +51,26 @@ export function ForestScene({ cells, mode, numCols, onDayHover }: Props) {
   const centerX = numCols / 2;
   const centerZ = numRows / 2;
 
+  // Track mouse position via DOM — more reliable than R3F event coords
+  const mousePos = useRef({ x: 0, y: 0 });
+  const handleMouseMove = useCallback((e: React.PointerEvent) => {
+    mousePos.current = { x: e.clientX, y: e.clientY };
+  }, []);
+
+  // R3F hover callback — uses DOM mouse position
+  const handleCellHover = useCallback(
+    (cell: TerrainCell | null) => {
+      if (cell) {
+        onDayHover?.(cell, mousePos.current);
+      } else {
+        onDayHover?.(null);
+      }
+    },
+    [onDayHover]
+  );
+
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full" onPointerMove={handleMouseMove}>
       <Canvas
         orthographic
         camera={{
@@ -68,8 +86,8 @@ export function ForestScene({ cells, mode, numCols, onDayHover }: Props) {
         <directionalLight position={[-10, 10, -10]} intensity={0.25} color="#c0d8f0" />
 
         <group position={[-centerX, 0, -centerZ]}>
-          {mode === "forest" && <VoxelForest cells={cells} onHover={onDayHover} />}
-          {mode === "city" && <CityGrid cells={cells} onHover={onDayHover} />}
+          {mode === "forest" && <VoxelForest cells={cells} onHover={handleCellHover} />}
+          {mode === "city" && <CityGrid cells={cells} onHover={handleCellHover} />}
         </group>
 
         <CameraController numCols={numCols} />
