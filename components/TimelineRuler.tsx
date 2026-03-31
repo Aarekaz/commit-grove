@@ -98,13 +98,19 @@ export function TimelineRuler({
   const totalWidth = (maxWeeks + 1) * TICK_WIDTH;
 
   // Generate ticks + month labels
+  // Place month labels at fixed calendar positions (~4.33 weeks per month)
+  const monthWeeks = new Map<number, number>(); // week → monthIdx
+  for (let m = 0; m < 12; m++) {
+    const weekForMonth = Math.round((m / 12) * 52);
+    if (weekForMonth <= maxWeeks) {
+      monthWeeks.set(weekForMonth, m);
+    }
+  }
+
   const ticks = [];
   for (let w = 0; w <= maxWeeks; w++) {
-    const monthPos = (w / Math.max(maxWeeks, 1)) * 12;
-    const isMonthBoundary = w % 4 === 0;
-    const monthIdx = Math.floor(monthPos);
-    const prevMonthIdx = w > 0 ? Math.floor(((w - 1) / Math.max(maxWeeks, 1)) * 12) : -1;
-    const showLabel = monthIdx !== prevMonthIdx && monthIdx < 12;
+    const isMajor = w % 4 === 0;
+    const monthLabel = monthWeeks.get(w);
 
     ticks.push(
       <div
@@ -113,11 +119,11 @@ export function TimelineRuler({
         style={{ left: w * TICK_WIDTH }}
       >
         <div
-          className={`w-px ${isMonthBoundary ? "h-3.5 bg-gray-400" : "h-1.5 bg-gray-300/60"}`}
+          className={`w-px ${isMajor ? "h-3.5 bg-gray-400" : "h-1.5 bg-gray-300/60"}`}
         />
-        {showLabel && (
-          <span className="absolute top-4 text-[7px] font-semibold tracking-wider text-gray-400 uppercase">
-            {MONTHS[monthIdx].slice(0, 3)}
+        {monthLabel !== undefined && (
+          <span className="absolute top-4 whitespace-nowrap text-[7px] font-semibold tracking-wider text-gray-400 uppercase">
+            {MONTHS[monthLabel]}
           </span>
         )}
       </div>
