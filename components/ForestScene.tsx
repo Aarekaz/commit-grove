@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useMemo } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
+import { getSeasonPalette, getCitySeasonPalette } from "@/lib/seasons";
 import { VoxelForest } from "./VoxelForest";
 import { CityGrid } from "./CityGrid";
 
@@ -47,6 +48,10 @@ type Props = {
   onDayHover?: (cell: TerrainCell | null, event?: { x: number; y: number }) => void;
 };
 
+function toCSS(rgb: [number, number, number]): string {
+  return `rgb(${Math.round(rgb[0] * 255)}, ${Math.round(rgb[1] * 255)}, ${Math.round(rgb[2] * 255)})`;
+}
+
 export function ForestScene({ cells, revealedCols, mode, numCols, onDayHover }: Props) {
   const centerX = numCols / 2;
   const centerZ = 7 / 2;
@@ -67,8 +72,25 @@ export function ForestScene({ cells, revealedCols, mode, numCols, onDayHover }: 
     [onDayHover]
   );
 
+  // Get sky colors from current season
+  const sky = useMemo(() => {
+    const palette = mode === "city"
+      ? getCitySeasonPalette(revealedCols)
+      : getSeasonPalette(revealedCols);
+    return {
+      top: toCSS(palette.skyTop),
+      bottom: toCSS(palette.skyBottom),
+    };
+  }, [revealedCols, mode]);
+
   return (
-    <div className="h-full w-full" onPointerMove={handleMouseMove}>
+    <div
+      className="h-full w-full transition-colors duration-300"
+      style={{
+        background: `linear-gradient(180deg, ${sky.top} 0%, ${sky.bottom} 100%)`,
+      }}
+      onPointerMove={handleMouseMove}
+    >
       <Canvas
         orthographic
         camera={{
@@ -77,11 +99,13 @@ export function ForestScene({ cells, revealedCols, mode, numCols, onDayHover }: 
           near: 0.1,
           far: 1000,
         }}
-        style={{ background: "#f6f8fa" }}
+        gl={{ alpha: true }}
+        style={{ background: "transparent" }}
       >
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[15, 25, 10]} intensity={0.9} castShadow />
-        <directionalLight position={[-10, 10, -10]} intensity={0.25} color="#c0d8f0" />
+        <ambientLight intensity={0.65} />
+        <directionalLight position={[15, 25, 10]} intensity={1.0} color="#fff5e6" castShadow />
+        <directionalLight position={[-10, 8, -10]} intensity={0.3} color="#b8d4f0" />
+        <hemisphereLight args={["#e8f0ff", "#d4c8a8", 0.3]} />
 
         <group position={[-centerX, 0, -centerZ]}>
           {mode === "forest" && (
