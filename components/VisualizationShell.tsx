@@ -77,6 +77,15 @@ export function VisualizationShell({ data }: Props) {
   }, [totalCols]);
 
   const yearBuildInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      if (yearBuildInterval.current) clearInterval(yearBuildInterval.current);
+      if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+    };
+  }, []);
+
   const buildTargetRef = useRef(0);
 
   const startBuildAnimation = useCallback((target: number) => {

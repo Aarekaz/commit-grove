@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useCallback, useEffect } from "react";
+import { MONTHS } from "@/lib/constants";
 
 type Props = {
   maxWeeks: number;
@@ -15,7 +16,6 @@ type Props = {
   onSpeedChange: (speed: number) => void;
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const SPEEDS = [0.5, 1, 2, 4];
 
 export function TimelineRuler({

@@ -55,30 +55,6 @@ export function transformContributions(
   };
 }
 
-export function smoothHeights(
-  days: ContributionDay[],
-  _rows: number,
-  _cols: number
-): ContributionDay[] {
-  const grid = new Map<string, ContributionDay>();
-  for (const day of days) {
-    grid.set(`${day.row},${day.col}`, day);
-  }
-
-  return days.map((day) => {
-    const neighbors: number[] = [day.height];
-    for (let dr = -1; dr <= 1; dr++) {
-      for (let dc = -1; dc <= 1; dc++) {
-        if (dr === 0 && dc === 0) continue;
-        const neighbor = grid.get(`${day.row + dr},${day.col + dc}`);
-        if (neighbor) neighbors.push(neighbor.height);
-      }
-    }
-    const avg = neighbors.reduce((a, b) => a + b, 0) / neighbors.length;
-    return { ...day, height: avg };
-  });
-}
-
 export function flattenYearDays(year: ContributionYear): ContributionDay[] {
   return year.weeks.flat();
 }

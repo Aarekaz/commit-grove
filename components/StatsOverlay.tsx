@@ -14,6 +14,7 @@ export function StatsOverlay({ data, selectedYear }: Props) {
     if (!yearData) return null;
 
     const allDays = yearData.weeks.flat();
+    if (allDays.length === 0) return null;
     const activeDays = allDays.filter((d) => d.count > 0);
     const maxDay = allDays.reduce((max, d) => (d.count > max.count ? d : max), allDays[0]);
 

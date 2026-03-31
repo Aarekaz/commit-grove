@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { MONTHS } from "@/lib/constants";
 
 type Props = {
   username: string;
@@ -9,8 +10,6 @@ type Props = {
   visible: boolean;
   onSkip: () => void;
 };
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function CinematicOverlay({ username, currentWeek, maxWeeks, visible, onSkip }: Props) {
   const monthIndex = Math.min(

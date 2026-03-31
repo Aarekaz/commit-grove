@@ -1,7 +1,7 @@
-import type { TerrainCell } from "@/lib/types";
+import type { ContributionDay } from "@/lib/types";
 
 type Props = {
-  day: TerrainCell;
+  day: ContributionDay;
   position: { x: number; y: number };
 };
 

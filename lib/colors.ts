@@ -46,7 +46,6 @@ export const PARK_GREEN_RGB: [number, number, number][] = [
 export const TERRAIN_LAND_RGB: [number, number, number] = [0.35, 0.54, 0.29];
 export const TERRAIN_SHORELINE_RGB: [number, number, number] = [0.54, 0.67, 0.42];
 export const TERRAIN_WATER_RGB: [number, number, number] = [0.29, 0.54, 0.69];
-export const TERRAIN_WATER_DEEP_RGB: [number, number, number] = [0.22, 0.44, 0.60];
 
 // City ground colors
 export const CITY_ROAD_RGB: [number, number, number] = [0.82, 0.82, 0.84];

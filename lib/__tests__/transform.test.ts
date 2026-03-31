@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { transformContributions, smoothHeights } from "../transform";
+import { transformContributions } from "../transform";
 
 const mockApiResponse = {
   contributionCalendar: {
@@ -72,18 +72,3 @@ describe("transformContributions", () => {
   });
 });
 
-describe("smoothHeights", () => {
-  it("averages heights with neighbors for terrain mode", () => {
-    const days = [
-      { date: "d", count: 0, level: 0 as const, row: 0, col: 0, height: 0 },
-      { date: "d", count: 0, level: 0 as const, row: 1, col: 0, height: 0 },
-      { date: "d", count: 0, level: 0 as const, row: 0, col: 1, height: 0 },
-      { date: "d", count: 10, level: 4 as const, row: 1, col: 1, height: 1 },
-    ];
-    const smoothed = smoothHeights(days, 7, 2);
-    // The center cell (1,1) with height 1 should be lower after smoothing
-    const centerSmoothed = smoothed.find((d) => d.row === 1 && d.col === 1);
-    expect(centerSmoothed!.height).toBeLessThan(1);
-    expect(centerSmoothed!.height).toBeGreaterThan(0);
-  });
-});

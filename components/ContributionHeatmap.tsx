@@ -3,13 +3,12 @@
 import { useState, useCallback } from "react";
 import type { ContributionDay, ContributionYear } from "@/lib/types";
 import { LEVEL_COLORS } from "@/lib/colors";
-import { DayTooltip } from "./DayTooltip";
+import { MONTHS } from "@/lib/constants";
+import { HoverInfo } from "./HoverInfo";
 
 type Props = {
   years: ContributionYear[];
 };
-
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function getMonthLabels(weeks: ContributionDay[][]): { label: string; col: number }[] {
   const labels: { label: string; col: number }[] = [];
@@ -92,7 +91,7 @@ function YearGrid({ year }: { year: ContributionYear }) {
           </div>
         </div>
       </div>
-      {tooltip && <DayTooltip day={tooltip.day} position={tooltip.position} />}
+      {tooltip && <HoverInfo day={tooltip.day} position={tooltip.position} />}
     </div>
   );
 }
