@@ -98,24 +98,21 @@ export function VisualizationShell({ data }: Props) {
       setSelectedYear(year);
       setIsPlaying(false);
       setVisibleWeeks(0);
-      // Need to wait for next render when fullTerrain updates
-      // so we trigger the build via a flag
     },
     []
   );
 
-  // When totalCols changes (year switch), auto-build
-  const prevTotalCols = useRef(totalCols);
+  // Auto-build when selectedYear changes
+  const prevYear = useRef(selectedYear);
   useEffect(() => {
     if (introPhase !== "ready") return;
     if (totalCols === 0) return;
-    if (totalCols !== prevTotalCols.current) {
-      prevTotalCols.current = totalCols;
-      setVisibleWeeks(0);
-      // Small delay to let the mesh re-initialize with new data
-      setTimeout(() => startBuildAnimation(totalCols), 50);
+    if (selectedYear !== prevYear.current) {
+      prevYear.current = selectedYear;
+      // Small delay to let fullTerrain recompute with new year data
+      setTimeout(() => startBuildAnimation(totalCols), 80);
     }
-  }, [totalCols, introPhase, startBuildAnimation]);
+  }, [selectedYear, totalCols, introPhase, startBuildAnimation]);
 
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
