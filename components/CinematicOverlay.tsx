@@ -13,7 +13,11 @@ type Props = {
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function CinematicOverlay({ username, currentWeek, maxWeeks, visible, onSkip }: Props) {
-  const monthIndex = Math.min(11, Math.floor((currentWeek / Math.max(maxWeeks, 1)) * 12));
+  const monthIndex = Math.min(
+    Math.floor((maxWeeks / 52) * 12) - 1, // cap at actual data months
+    Math.floor((currentWeek / Math.max(maxWeeks, 1)) * Math.ceil((maxWeeks / 52) * 12))
+  );
+  const safeMonthIndex = Math.max(0, Math.min(11, monthIndex));
   const progress = maxWeeks > 0 ? (currentWeek / maxWeeks) * 100 : 0;
 
   return (
@@ -48,7 +52,7 @@ export function CinematicOverlay({ username, currentWeek, maxWeeks, visible, onS
             transition={{ delay: 1 }}
           >
             <span className="text-6xl font-bold tracking-tight text-gray-800/30 sm:text-8xl">
-              {MONTHS[monthIndex]}
+              {MONTHS[safeMonthIndex]}
             </span>
           </motion.div>
 

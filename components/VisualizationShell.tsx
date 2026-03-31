@@ -21,49 +21,13 @@ type IntroPhase = "cinematic" | "ready";
 
 export function VisualizationShell({ data }: Props) {
   const [introPhase, setIntroPhase] = useState<IntroPhase>("cinematic");
-  const [mode, setMode] = useState<ViewMode>("forest"); // start in forest for cinematic
+  const [mode, setMode] = useState<ViewMode>("forest");
   const [selectedYear, setSelectedYear] = useState(data.years[0]?.year);
   const [isPlaying, setIsPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
 
   const yearNumbers = data.years.map((y) => y.year);
   const selectedYearData = data.years.find((y) => y.year === selectedYear);
-  const maxWeeks = selectedYearData?.weeks.length ?? 0;
-
-  const [visibleWeeks, setVisibleWeeks] = useState(0); // start at 0 for cinematic
-
-  // Cinematic auto-play
-  const cinematicInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  useEffect(() => {
-    if (introPhase !== "cinematic") return;
-
-    // Small delay before starting the cinematic
-    const startDelay = setTimeout(() => {
-      cinematicInterval.current = setInterval(() => {
-        setVisibleWeeks((prev) => {
-          if (prev >= maxWeeks) {
-            // Cinematic finished
-            if (cinematicInterval.current) clearInterval(cinematicInterval.current);
-            setTimeout(() => setIntroPhase("ready"), 600);
-            return maxWeeks;
-          }
-          return prev + 1;
-        });
-      }, 60); // Fast playback for cinematic
-    }, 800);
-
-    return () => {
-      clearTimeout(startDelay);
-      if (cinematicInterval.current) clearInterval(cinematicInterval.current);
-    };
-  }, [introPhase, maxWeeks]);
-
-  const handleSkipIntro = useCallback(() => {
-    if (cinematicInterval.current) clearInterval(cinematicInterval.current);
-    setVisibleWeeks(maxWeeks);
-    setIntroPhase("ready");
-  }, [maxWeeks]);
 
   // Pre-compute terrain ONCE for the full year
   const today = new Date().toISOString().slice(0, 10);
@@ -76,22 +40,57 @@ export function VisualizationShell({ data }: Props) {
     return generateTerrain(pastDays, 7, numCols, data.username);
   }, [selectedYearData, data.username, today]);
 
-  // Slice pre-computed terrain by visible weeks
-  const visibleCells = useMemo(() => {
-    return fullTerrain.filter((c) => c.col < visibleWeeks);
-  }, [fullTerrain, visibleWeeks]);
+  const totalCols = fullTerrain.length > 0 ? Math.max(...fullTerrain.map((c) => c.col)) + 1 : 0;
+  const maxWeeks = totalCols;
 
-  const actualNumCols = visibleCells.length > 0 ? Math.max(...visibleCells.map((c) => c.col)) + 1 : 0;
+  const [visibleWeeks, setVisibleWeeks] = useState(0); // start at 0 for cinematic
+
+  // Cinematic auto-play
+  const cinematicInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    if (introPhase !== "cinematic") return;
+
+    const startDelay = setTimeout(() => {
+      cinematicInterval.current = setInterval(() => {
+        setVisibleWeeks((prev) => {
+          if (prev >= totalCols) {
+            if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+            setTimeout(() => setIntroPhase("ready"), 600);
+            return totalCols;
+          }
+          return prev + 1;
+        });
+      }, 60);
+    }, 800);
+
+    return () => {
+      clearTimeout(startDelay);
+      if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+    };
+  }, [introPhase, totalCols]);
+
+  const handleSkipIntro = useCallback(() => {
+    if (cinematicInterval.current) clearInterval(cinematicInterval.current);
+    setVisibleWeeks(totalCols);
+    setIntroPhase("ready");
+  }, [totalCols]);
 
   const handleYearChange = useCallback(
     (year: number) => {
       setSelectedYear(year);
-      const yearData = data.years.find((y) => y.year === year);
-      setVisibleWeeks(yearData?.weeks.length ?? 0);
+      // visibleWeeks will update when fullTerrain recomputes via totalCols
       setIsPlaying(false);
     },
-    [data.years]
+    []
   );
+
+  // Reset visibleWeeks when year changes (totalCols changes)
+  useEffect(() => {
+    if (introPhase === "ready") {
+      setVisibleWeeks(totalCols);
+    }
+  }, [totalCols, introPhase]);
 
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
@@ -127,7 +126,7 @@ export function VisualizationShell({ data }: Props) {
 
   const handleDayHover = useCallback(
     (day: TerrainCell | null, event?: { x: number; y: number }) => {
-      if (introPhase === "cinematic") return; // no tooltips during cinematic
+      if (introPhase === "cinematic") return;
       if (day && event) {
         setHoveredDay({ day, position: event });
       } else {
@@ -159,7 +158,7 @@ export function VisualizationShell({ data }: Props) {
       </AnimatePresence>
 
       {/* 3D Scene — always visible during cinematic + 3D modes */}
-      {selectedYearData && (
+      {fullTerrain.length > 0 && (
         <div
           className="absolute inset-0"
           style={{
@@ -169,9 +168,10 @@ export function VisualizationShell({ data }: Props) {
           }}
         >
           <ForestScene
-            cells={visibleCells}
+            cells={fullTerrain}
+            revealedCols={visibleWeeks}
             mode={mode === "grid" ? "forest" : mode}
-            numCols={actualNumCols}
+            numCols={totalCols}
             onDayHover={handleDayHover}
           />
         </div>
@@ -181,12 +181,12 @@ export function VisualizationShell({ data }: Props) {
       <CinematicOverlay
         username={data.username}
         currentWeek={visibleWeeks}
-        maxWeeks={maxWeeks}
+        maxWeeks={totalCols}
         visible={introPhase === "cinematic"}
         onSkip={handleSkipIntro}
       />
 
-      {/* 3D Tooltip — only after cinematic */}
+      {/* 3D Tooltip */}
       {showControls && is3D && hoveredDay && (
         <HoverInfo day={hoveredDay.day} position={hoveredDay.position} />
       )}
@@ -195,7 +195,6 @@ export function VisualizationShell({ data }: Props) {
       <AnimatePresence>
         {showControls && (
           <>
-            {/* Back link */}
             <motion.a
               href="/"
               className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
@@ -206,7 +205,6 @@ export function VisualizationShell({ data }: Props) {
               ← Try another
             </motion.a>
 
-            {/* Username badge */}
             <motion.div
               className="absolute right-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm text-gray-600 shadow-sm backdrop-blur"
               initial={{ opacity: 0, y: -10 }}
@@ -216,7 +214,6 @@ export function VisualizationShell({ data }: Props) {
               {data.username}&apos;s forest
             </motion.div>
 
-            {/* Stats */}
             {is3D && (
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
@@ -227,7 +224,6 @@ export function VisualizationShell({ data }: Props) {
               </motion.div>
             )}
 
-            {/* View toggle */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -236,7 +232,6 @@ export function VisualizationShell({ data }: Props) {
               <ViewToggle mode={mode} onModeChange={setMode} />
             </motion.div>
 
-            {/* Timeline ruler (3D modes only) */}
             {is3D && maxWeeks > 0 && (
               <motion.div
                 initial={{ opacity: 0, y: -20 }}

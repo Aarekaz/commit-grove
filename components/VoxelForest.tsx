@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useMemo, useEffect, useCallback } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
 import type { ThreeEvent } from "@react-three/fiber";
@@ -14,20 +13,19 @@ import {
 
 type Props = {
   cells: TerrainCell[];
+  revealedCols: number;
   onHover?: (cell: TerrainCell | null) => void;
 };
 
 const CELL_SIZE = 1;
 const TERRAIN_SCALE = 3;
 const WATER_Y = 0.06 * TERRAIN_SCALE;
-const GROW_DURATION = 0.6;
-const TREE_DELAY = 0.3;
 
 type VoxelCube = {
   x: number; y: number; z: number;
   w: number; h: number; d: number;
   r: number; g: number; b: number;
-  col: number; row: number;
+  col: number;
 };
 
 function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
@@ -46,7 +44,7 @@ function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
     x: cx, y: baseY + trunkH / 2, z: cz,
     w: trunkW, h: trunkH, d: trunkW,
     r: rgb[0] * 0.6, g: rgb[1] * 0.6, b: rgb[2] * 0.6,
-    col: cell.col, row: cell.row,
+    col: cell.col,
   });
 
   const c1W = scale * 0.95;
@@ -55,7 +53,7 @@ function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
     x: cx, y: baseY + trunkH + c1H / 2, z: cz,
     w: c1W, h: c1H, d: c1W,
     r: rgb[0], g: rgb[1], b: rgb[2],
-    col: cell.col, row: cell.row,
+    col: cell.col,
   });
 
   if (t > 0.25) {
@@ -65,7 +63,7 @@ function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
       x: cx, y: baseY + trunkH + c1H + c2H / 2, z: cz,
       w: c2W, h: c2H, d: c2W,
       r: rgb[0] * 0.9, g: rgb[1] * 0.9, b: rgb[2] * 0.9,
-      col: cell.col, row: cell.row,
+      col: cell.col,
     });
 
     if (t > 0.55) {
@@ -75,7 +73,7 @@ function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
         x: cx, y: baseY + trunkH + c1H + c2H + c3H / 2, z: cz,
         w: c3W, h: c3H, d: c3W,
         r: rgb[0] * 0.8, g: rgb[1] * 0.8, b: rgb[2] * 0.8,
-        col: cell.col, row: cell.row,
+        col: cell.col,
       });
     }
   }
@@ -83,136 +81,119 @@ function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
   return cubes;
 }
 
-export function VoxelForest({ cells, onHover }: Props) {
+export function VoxelForest({ cells, revealedCols, onHover }: Props) {
   const terrainRef = useRef<THREE.InstancedMesh>(null);
   const treeRef = useRef<THREE.InstancedMesh>(null);
-  const startTime = useRef(Date.now());
-  const animDone = useRef(false);
 
   const dummy = useMemo(() => new THREE.Object3D(), []);
   const color = useMemo(() => new THREE.Color(), []);
 
-  const treeCubes = useMemo(() => {
-    return cells
-      .filter((c) => c.count > 0 && c.terrainType !== "water")
-      .flatMap((cell) => {
-        const baseY = cell.terrainHeight * TERRAIN_SCALE;
-        return generateTreeCubes(cell, baseY);
-      });
+  // Sort cells by column for progressive reveal via mesh.count
+  const sortedCells = useMemo(() => {
+    return [...cells].sort((a, b) => a.col - b.col || a.row - b.row);
   }, [cells]);
 
+  // Pre-compute ALL tree cubes, sorted by column
+  const allTreeCubes = useMemo(() => {
+    return sortedCells
+      .filter((c) => c.count > 0 && c.terrainType !== "water")
+      .flatMap((cell) => generateTreeCubes(cell, cell.terrainHeight * TERRAIN_SCALE))
+      .sort((a, b) => a.col - b.col);
+  }, [sortedCells]);
+
+  // Set ALL terrain matrices and colors ONCE
   useEffect(() => {
-    if (!terrainRef.current) return;
-    for (let i = 0; i < cells.length; i++) {
-      const cell = cells[i];
+    if (!terrainRef.current || sortedCells.length === 0) return;
+
+    for (let i = 0; i < sortedCells.length; i++) {
+      const cell = sortedCells[i];
+      const isWater = cell.terrainType === "water";
+      const targetY = isWater ? WATER_Y : cell.terrainHeight * TERRAIN_SCALE;
+      const h = isWater ? 0.15 : Math.max(0.15, targetY);
+
+      dummy.position.set(cell.col * CELL_SIZE, h / 2, cell.row * CELL_SIZE);
+      dummy.scale.set(CELL_SIZE, h, CELL_SIZE);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      terrainRef.current.setMatrixAt(i, dummy.matrix);
+
       let rgb: [number, number, number];
-      if (cell.terrainType === "water") {
-        rgb = TERRAIN_WATER_RGB;
-      } else if (cell.terrainType === "shoreline") {
-        rgb = TERRAIN_SHORELINE_RGB;
-      } else {
-        rgb = TERRAIN_LAND_RGB;
-      }
+      if (isWater) rgb = TERRAIN_WATER_RGB;
+      else if (cell.terrainType === "shoreline") rgb = TERRAIN_SHORELINE_RGB;
+      else rgb = TERRAIN_LAND_RGB;
       color.setRGB(rgb[0], rgb[1], rgb[2]);
       terrainRef.current.setColorAt(i, color);
     }
+    terrainRef.current.instanceMatrix.needsUpdate = true;
     if (terrainRef.current.instanceColor) terrainRef.current.instanceColor.needsUpdate = true;
-  }, [cells, color]);
+  }, [sortedCells, dummy, color]);
 
+  // Set ALL tree matrices and colors ONCE
   useEffect(() => {
-    if (!treeRef.current) return;
-    for (let i = 0; i < treeCubes.length; i++) {
-      const cube = treeCubes[i];
+    if (!treeRef.current || allTreeCubes.length === 0) return;
+
+    for (let i = 0; i < allTreeCubes.length; i++) {
+      const cube = allTreeCubes[i];
+      dummy.position.set(cube.x, cube.y, cube.z);
+      dummy.scale.set(cube.w, cube.h, cube.d);
+      dummy.rotation.set(0, 0, 0);
+      dummy.updateMatrix();
+      treeRef.current.setMatrixAt(i, dummy.matrix);
+
       color.setRGB(cube.r, cube.g, cube.b);
       treeRef.current.setColorAt(i, color);
     }
+    treeRef.current.instanceMatrix.needsUpdate = true;
     if (treeRef.current.instanceColor) treeRef.current.instanceColor.needsUpdate = true;
-  }, [treeCubes, color]);
+  }, [allTreeCubes, dummy, color]);
 
-  // Precompute max animation time
-  const maxAnimTime = useMemo(() => {
-    let maxDelay = 0;
-    for (const c of cells) {
-      const d = c.col * 0.006 + c.row * 0.003;
-      if (d > maxDelay) maxDelay = d;
-    }
-    return maxDelay + GROW_DURATION + TREE_DELAY + 0.1;
-  }, [cells]);
-
+  // Progressive reveal: set mesh.count based on revealedCols
   useEffect(() => {
-    startTime.current = Date.now();
-    animDone.current = false;
-  }, [cells]);
-
-  useFrame(() => {
-    if (animDone.current) return;
-
-    const elapsed = (Date.now() - startTime.current) / 1000;
-
-    if (elapsed > maxAnimTime) {
-      // Set final positions once and stop
-      animDone.current = true;
-    }
-
     if (terrainRef.current) {
-      for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
-        const delay = cell.col * 0.006 + cell.row * 0.003;
-        const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-        const eased = animDone.current ? 1 : 1 - Math.pow(1 - progress, 3);
-
-        const isWater = cell.terrainType === "water";
-        const targetY = isWater ? WATER_Y : cell.terrainHeight * TERRAIN_SCALE;
-        const h = isWater ? 0.15 : Math.max(0.15, targetY);
-
-        dummy.position.set(cell.col * CELL_SIZE, (h / 2) * eased, cell.row * CELL_SIZE);
-        dummy.scale.set(CELL_SIZE, Math.max(0.01, h * eased), CELL_SIZE);
-        dummy.rotation.set(0, 0, 0);
-        dummy.updateMatrix();
-        terrainRef.current.setMatrixAt(i, dummy.matrix);
+      // Count terrain cells with col < revealedCols
+      let terrainCount = 0;
+      for (let i = 0; i < sortedCells.length; i++) {
+        if (sortedCells[i].col < revealedCols) terrainCount = i + 1;
+        else break;
       }
-      terrainRef.current.instanceMatrix.needsUpdate = true;
+      terrainRef.current.count = terrainCount;
     }
 
     if (treeRef.current) {
-      for (let i = 0; i < treeCubes.length; i++) {
-        const cube = treeCubes[i];
-        const delay = cube.col * 0.006 + cube.row * 0.003 + TREE_DELAY;
-        const progress = Math.min(1, Math.max(0, (elapsed - delay) / GROW_DURATION));
-        const eased = animDone.current ? 1 : 1 - Math.pow(1 - progress, 3);
-
-        dummy.position.set(cube.x, cube.y * eased, cube.z);
-        dummy.scale.set(cube.w, Math.max(0.01, cube.h * eased), cube.d);
-        dummy.rotation.set(0, 0, 0);
-        dummy.updateMatrix();
-        treeRef.current.setMatrixAt(i, dummy.matrix);
+      let treeCount = 0;
+      for (let i = 0; i < allTreeCubes.length; i++) {
+        if (allTreeCubes[i].col < revealedCols) treeCount = i + 1;
+        else break;
       }
-      treeRef.current.instanceMatrix.needsUpdate = true;
+      treeRef.current.count = treeCount;
     }
-  });
+  }, [revealedCols, sortedCells, allTreeCubes]);
 
+  // Tooltip
   const handlePointerMove = useCallback(
     (e: ThreeEvent<PointerEvent>) => {
       e.stopPropagation();
       const id = e.instanceId;
-      if (id !== undefined && id < cells.length && cells[id].terrainType !== "water") {
-        onHover?.(cells[id]);
+      if (id !== undefined && id < sortedCells.length && sortedCells[id].terrainType !== "water") {
+        onHover?.(sortedCells[id]);
       } else {
         onHover?.(null);
       }
     },
-    [cells, onHover]
+    [sortedCells, onHover]
   );
 
   const handlePointerLeave = useCallback(() => {
     onHover?.(null);
   }, [onHover]);
 
+  if (sortedCells.length === 0) return null;
+
   return (
     <>
       <instancedMesh
         ref={terrainRef}
-        args={[undefined, undefined, cells.length]}
+        args={[undefined, undefined, sortedCells.length]}
         frustumCulled={false}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
@@ -221,8 +202,12 @@ export function VoxelForest({ cells, onHover }: Props) {
         <meshStandardMaterial />
       </instancedMesh>
 
-      {treeCubes.length > 0 && (
-        <instancedMesh ref={treeRef} args={[undefined, undefined, treeCubes.length]}>
+      {allTreeCubes.length > 0 && (
+        <instancedMesh
+          ref={treeRef}
+          args={[undefined, undefined, allTreeCubes.length]}
+          frustumCulled={false}
+        >
           <boxGeometry args={[1, 1, 1]} />
           <meshStandardMaterial />
         </instancedMesh>
