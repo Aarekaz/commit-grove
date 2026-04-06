@@ -32,6 +32,8 @@ I expected Claude to start generating code. Instead, it started interviewing me.
 
 ### The seven questions
 
+One thing worth mentioning: this didn't happen out of the box. I use a Claude Code plugin called [superpowers](https://github.com/gstack-io/superpowers) that adds structured workflows on top of Claude's base behavior. One of those workflows is a brainstorming skill that tells Claude to ask clarifying questions before designing, walk through the design section by section for approval, and write a formal spec before touching code. Without that plugin, Claude might have just started generating a Next.js project from my PRD. The structured brainstorm was the plugin's contribution; the quality of the questions was Claude's.
+
 Claude asked me seven clarifying questions, one at a time, each with 2-4 options and a recommendation. Here they are in full, because I think this was the most interesting part of the whole collaboration:
 
 **Question 1** (platform):
