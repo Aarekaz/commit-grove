@@ -10,6 +10,14 @@ I had this idea from a video I saw: what if your GitHub contribution graph, that
 
 So I built it. CommitGrove. You type in a GitHub username and it pulls your contribution history, shows the classic 2D heatmap, then lets you toggle into a 3D voxel forest or a procedurally generated city. There's terrain with hills shaped by your commit density, lakes where you didn't code, seasonal colors that shift from winter snow to autumn orange as the timeline scrubs through the year. A cinematic intro where the whole world builds itself block by block.
 
+![The landing page](blog-images/01-landing-page.png)
+
+![2D contribution heatmap showing 5 years of GitHub activity](blog-images/02-heatmap-grid.png)
+
+![3D forest mode with spring cherry blossom colors](blog-images/03-forest-spring.png)
+
+![City mode with parks, lakes, and skyscrapers](blog-images/05-city-mode.png)
+
 Sixty commits in three days. I built it with Claude (Anthropic's AI assistant) in one continuous conversation. Not as a gimmick for this assignment, but because I genuinely wanted to see how far I could push a creative project when the AI handles most of the typing and I handle most of the thinking.
 
 This blog is about that collaboration. What worked, what was weird, and what it made me think about trust.
@@ -164,6 +172,8 @@ Claude's pitch:
 > The cinematic intro becomes a nature documentary. Your coding year literally goes through seasons."
 
 Both of these features, the cinematic intro and seasonal colors, were Claude's proposals. I just said yes. They're now the two things that make CommitGrove feel different from a generic GitHub visualization.
+
+![The same forest in winter — gray terrain, bare trees, frozen palette](blog-images/06-forest-winter.png)
 
 ### The bugs, the glitches, the "WTF"
 
