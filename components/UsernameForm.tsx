@@ -83,6 +83,10 @@ export function UsernameForm({ hints }: UsernameFormProps) {
           ))}
         </p>
       )}
+
+      <p className="text-[11px] text-gray-500">
+        Public GitHub data only — no login, no storage.
+      </p>
     </div>
   );
 }

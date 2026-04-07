@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 import { MONTHS } from "@/lib/constants";
+
+const RULER_HINT_STORAGE_KEY = "commit-grove:ruler-hint-seen";
 
 type Props = {
   maxWeeks: number;
@@ -37,6 +39,21 @@ export function TimelineRuler({
   const dragStartWeek = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // First-time ruler affordance hint — drag-to-scrub is invisible without it.
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.localStorage.getItem(RULER_HINT_STORAGE_KEY)) {
+      setShowHint(true);
+    }
+  }, []);
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(RULER_HINT_STORAGE_KEY, "1");
+    }
+  }, []);
+
   const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
@@ -62,8 +79,9 @@ export function TimelineRuler({
       dragStartX.current = e.clientX;
       dragStartWeek.current = visibleWeeks;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      dismissHint();
     },
-    [visibleWeeks]
+    [visibleWeeks, dismissHint]
   );
 
   const handlePointerMove = useCallback(
@@ -86,8 +104,9 @@ export function TimelineRuler({
       const delta = e.deltaY > 0 ? 1 : -1;
       const newWeek = Math.max(0, Math.min(maxWeeks, visibleWeeks + delta));
       onVisibleWeeksChange(newWeek);
+      dismissHint();
     },
-    [maxWeeks, visibleWeeks, onVisibleWeeksChange]
+    [maxWeeks, visibleWeeks, onVisibleWeeksChange, dismissHint]
   );
 
   const yearIdx = years.indexOf(selectedYear);
@@ -132,6 +151,14 @@ export function TimelineRuler({
 
   return (
     <div className="absolute top-0 left-0 right-0 z-10">
+      {showHint && (
+        <p
+          className="pointer-events-none absolute left-1/2 top-[58px] -translate-x-1/2 whitespace-nowrap text-[10px] font-medium tracking-wide text-gray-400 opacity-0 animate-[fade-in_0.4s_ease-out_0.8s_forwards]"
+          aria-hidden="true"
+        >
+          drag to scrub · scroll to step
+        </p>
+      )}
       <div className="flex items-center justify-center gap-3 px-4 pt-3 pb-1">
         {/* Year nav */}
         <div className="flex shrink-0 items-center">
