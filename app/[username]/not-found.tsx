@@ -10,7 +10,7 @@ export default function NotFound() {
             That GitHub username doesn&apos;t exist or has no public contributions.
           </p>
         </div>
-        <UsernameForm />
+        <UsernameForm hints={["torvalds", "gaearon", "sindresorhus"]} />
       </div>
     </main>
   );

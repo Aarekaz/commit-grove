@@ -49,7 +49,7 @@ export function StatsOverlay({ data, selectedYear }: Props) {
   return (
     <div className="absolute bottom-20 left-4 z-10 flex flex-col gap-1 sm:bottom-6 sm:left-5">
       <div className="flex items-baseline gap-2">
-        <span className="text-[10px] font-semibold tracking-wider text-gray-400 uppercase tabular-nums">
+        <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase tabular-nums">
           {selectedYear}
         </span>
         <span className="text-2xl font-bold tabular-nums text-gray-900 sm:text-3xl">
