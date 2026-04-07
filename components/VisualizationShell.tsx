@@ -245,12 +245,13 @@ export function VisualizationShell({ data }: Props) {
           <>
             <motion.a
               href="/"
-              className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-medium text-gray-600 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
+              aria-label="CommitGrove home"
+              className="absolute left-4 top-4 z-10 rounded-lg bg-black/5 px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm backdrop-blur transition-colors hover:bg-black/10"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              ← Try another
+              ← CommitGrove
             </motion.a>
 
             <motion.div
@@ -262,15 +263,13 @@ export function VisualizationShell({ data }: Props) {
               {data.username}&apos;s forest
             </motion.div>
 
-            {is3D && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-              >
-                <StatsOverlay data={data} selectedYear={selectedYear} />
-              </motion.div>
-            )}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <StatsOverlay data={data} selectedYear={selectedYear} />
+            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
