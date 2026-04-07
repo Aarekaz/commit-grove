@@ -16,11 +16,14 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function UserPage({ params }: Props) {
   const { username } = await params;
-  const data = await fetchContributions(username, 5);
+  const result = await fetchContributions(username, 5);
 
-  if (!data) {
-    notFound();
+  if (!result.ok) {
+    if (result.reason === "not_found") notFound();
+    // Everything else (rate_limited, unauthorized, network, server, misconfigured)
+    // is caught by app/[username]/error.tsx. The reason travels in the error message.
+    throw new Error(result.reason);
   }
 
-  return <VisualizationShell data={data} />;
+  return <VisualizationShell data={result.data} />;
 }
