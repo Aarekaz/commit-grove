@@ -138,9 +138,10 @@ export function TimelineRuler({
           <button
             onClick={() => prevYear && onYearChange(prevYear)}
             disabled={!prevYear}
+            aria-label={prevYear ? `Previous year (${prevYear})` : "Previous year"}
             className="flex h-8 w-6 items-center justify-center text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
           >
-            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor"><path d="M5.5 0.5L1 5l4.5 4.5" /></svg>
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor" aria-hidden="true"><path d="M5.5 0.5L1 5l4.5 4.5" /></svg>
           </button>
           <span className="min-w-[3.5rem] text-center text-base font-bold tabular-nums text-gray-800">
             {selectedYear}
@@ -148,9 +149,10 @@ export function TimelineRuler({
           <button
             onClick={() => nextYear && onYearChange(nextYear)}
             disabled={!nextYear}
+            aria-label={nextYear ? `Next year (${nextYear})` : "Next year"}
             className="flex h-8 w-6 items-center justify-center text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
           >
-            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor"><path d="M1.5 0.5L6 5l-4.5 4.5" /></svg>
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor" aria-hidden="true"><path d="M1.5 0.5L6 5l-4.5 4.5" /></svg>
           </button>
         </div>
 
@@ -190,24 +192,32 @@ export function TimelineRuler({
         <div className="flex shrink-0 items-center gap-1.5">
           <button
             onClick={onPlayToggle}
+            aria-label={isPlaying ? "Pause" : "Play"}
+            aria-pressed={isPlaying}
             className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-black/5"
           >
             {isPlaying ? (
-              <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor" className="text-gray-500">
+              <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor" className="text-gray-500" aria-hidden="true">
                 <rect x="0.5" y="0" width="2.5" height="10" rx="0.5" />
                 <rect x="5" y="0" width="2.5" height="10" rx="0.5" />
               </svg>
             ) : (
-              <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" className="ml-0.5 text-gray-500">
+              <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" className="ml-0.5 text-gray-500" aria-hidden="true">
                 <path d="M0.5 0.5v9l8-4.5z" />
               </svg>
             )}
           </button>
-          <div className="hidden sm:flex rounded bg-black/5 p-0.5">
+          <div
+            role="group"
+            aria-label="Playback speed"
+            className="hidden sm:flex rounded bg-black/5 p-0.5"
+          >
             {SPEEDS.map((s) => (
               <button
                 key={s}
                 onClick={() => onSpeedChange(s)}
+                aria-label={`${s}× speed`}
+                aria-pressed={speed === s}
                 className={`rounded px-1.5 py-0.5 text-[8px] font-bold tabular-nums transition-colors ${
                   speed === s
                     ? "bg-gray-900 text-white"

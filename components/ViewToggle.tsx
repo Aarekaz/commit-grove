@@ -16,11 +16,16 @@ const MODES: { value: ViewMode; label: string }[] = [
 export function ViewToggle({ mode, onModeChange }: Props) {
   return (
     <div className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2">
-      <div className="flex rounded-xl border border-gray-200/60 bg-white/80 p-1 shadow-lg backdrop-blur">
+      <div
+        role="group"
+        aria-label="View mode"
+        className="flex rounded-xl border border-gray-200/60 bg-white/80 p-1 shadow-lg backdrop-blur"
+      >
         {MODES.map((m) => (
           <button
             key={m.value}
             onClick={() => onModeChange(m.value)}
+            aria-pressed={mode === m.value}
             className={`min-h-[44px] whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:min-h-0 ${
               mode === m.value
                 ? "bg-gray-900 text-white shadow-sm"

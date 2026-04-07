@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import type { ContributionData, TerrainCell, ViewMode } from "@/lib/types";
 import { generateTerrain } from "@/lib/terrain";
 import { flattenYearDays } from "@/lib/transform";
@@ -20,6 +20,7 @@ type Props = {
 type IntroPhase = "cinematic" | "ready";
 
 export function VisualizationShell({ data }: Props) {
+  const prefersReducedMotion = useReducedMotion();
   const [introPhase, setIntroPhase] = useState<IntroPhase>("cinematic");
   const [mode, setMode] = useState<ViewMode>("forest");
   const [selectedYear, setSelectedYear] = useState(data.years[0]?.year);
@@ -50,6 +51,18 @@ export function VisualizationShell({ data }: Props) {
 
   useEffect(() => {
     if (introPhase !== "cinematic") return;
+    if (totalCols === 0) return;
+
+    // Accessibility: users with prefers-reduced-motion skip the cinematic
+    // reveal entirely and land directly on the fully-built scene. Schedule
+    // via microtask so the state updates run after the current render.
+    if (prefersReducedMotion) {
+      queueMicrotask(() => {
+        setVisibleWeeks(totalCols);
+        setIntroPhase("ready");
+      });
+      return;
+    }
 
     const startDelay = setTimeout(() => {
       cinematicInterval.current = setInterval(() => {
@@ -68,7 +81,7 @@ export function VisualizationShell({ data }: Props) {
       clearTimeout(startDelay);
       if (cinematicInterval.current) clearInterval(cinematicInterval.current);
     };
-  }, [introPhase, totalCols]);
+  }, [introPhase, totalCols, prefersReducedMotion]);
 
   const handleSkipIntro = useCallback(() => {
     if (cinematicInterval.current) clearInterval(cinematicInterval.current);
@@ -118,10 +131,14 @@ export function VisualizationShell({ data }: Props) {
     if (totalCols === 0) return;
     if (selectedYear !== prevYear.current) {
       prevYear.current = selectedYear;
+      if (prefersReducedMotion) {
+        queueMicrotask(() => setVisibleWeeks(totalCols));
+        return;
+      }
       // Small delay to let fullTerrain recompute with new year data
       setTimeout(() => startBuildAnimation(totalCols), 80);
     }
-  }, [selectedYear, totalCols, introPhase, startBuildAnimation]);
+  }, [selectedYear, totalCols, introPhase, startBuildAnimation, prefersReducedMotion]);
 
   const handleVisibleWeeksChange = useCallback(
     (value: number) => {
