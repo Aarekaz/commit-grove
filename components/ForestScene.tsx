@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useMemo } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useStore } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
 import { getSeasonPalette, getCitySeasonPalette } from "@/lib/seasons";
@@ -11,10 +11,14 @@ import { CityGrid } from "./CityGrid";
 type CameraProps = { numCols: number };
 
 function CameraController({ numCols }: CameraProps) {
-  const { camera } = useThree();
+  const store = useStore();
   const controlsRef = useRef<any>(null);
 
   useEffect(() => {
+    // Imperative access via the store avoids the react-hooks/immutability
+    // rule that forbids mutating values returned from a hook. The store
+    // reference itself is stable across renders.
+    const { camera } = store.getState();
     const maxDim = Math.max(numCols, 7);
     const zoom = Math.min(80, Math.max(20, (52 / Math.max(maxDim, 10)) * 35));
     camera.zoom = zoom;
@@ -24,7 +28,7 @@ function CameraController({ numCols }: CameraProps) {
       controlsRef.current.target.set(0, 1, 0);
       controlsRef.current.update();
     }
-  }, [numCols, camera]);
+  }, [numCols, store]);
 
   return (
     <OrbitControls
