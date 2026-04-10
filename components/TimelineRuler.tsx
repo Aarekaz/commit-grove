@@ -34,7 +34,11 @@ export function TimelineRuler({
   speed,
   onSpeedChange,
 }: Props) {
+  // Ref for high-frequency reads inside handlePointerMove; mirrored state
+  // so render-time decisions (e.g. disabling the transform transition
+  // while dragging) don't trip the react-hooks/refs rule.
   const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef(0);
   const dragStartWeek = useRef(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -44,7 +48,7 @@ export function TimelineRuler({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!window.localStorage.getItem(RULER_HINT_STORAGE_KEY)) {
-      setShowHint(true);
+      queueMicrotask(() => setShowHint(true));
     }
   }, []);
   const dismissHint = useCallback(() => {
@@ -76,6 +80,7 @@ export function TimelineRuler({
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       dragging.current = true;
+      setIsDragging(true);
       dragStartX.current = e.clientX;
       dragStartWeek.current = visibleWeeks;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
@@ -97,6 +102,7 @@ export function TimelineRuler({
 
   const handlePointerUp = useCallback(() => {
     dragging.current = false;
+    setIsDragging(false);
   }, []);
 
   const handleWheel = useCallback(
@@ -208,7 +214,7 @@ export function TimelineRuler({
             style={{
               transform: `translateX(${offset}px)`,
               width: totalWidth,
-              transition: dragging.current ? "none" : "transform 0.06s linear",
+              transition: isDragging ? "none" : "transform 0.06s linear",
             }}
           >
             {ticks}
