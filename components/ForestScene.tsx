@@ -5,6 +5,11 @@ import { Canvas, useStore } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
 import { getSeasonPalette, getCitySeasonPalette } from "@/lib/seasons";
+
+// ForestScene only renders 3D modes; Grid is a separate DOM-only component.
+// Narrowing this prop means TypeScript catches accidental "grid" pass-through
+// at the boundary instead of silently falling into an unrenderable mode.
+export type SceneMode = Exclude<ViewMode, "grid">;
 import { VoxelForest } from "./VoxelForest";
 import { CityGrid } from "./CityGrid";
 
@@ -47,7 +52,7 @@ function CameraController({ numCols }: CameraProps) {
 type Props = {
   cells: TerrainCell[];
   revealedCols: number;
-  mode: ViewMode;
+  mode: SceneMode;
   numCols: number;
   onDayHover?: (cell: TerrainCell | null, event?: { x: number; y: number }) => void;
 };
