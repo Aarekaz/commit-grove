@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useCallback, useMemo } from "react";
+import { useEffect, useRef, useCallback, useMemo, type ComponentRef } from "react";
 import { Canvas, useStore } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import type { TerrainCell, ViewMode } from "@/lib/types";
@@ -12,7 +12,7 @@ type CameraProps = { numCols: number };
 
 function CameraController({ numCols }: CameraProps) {
   const store = useStore();
-  const controlsRef = useRef<any>(null);
+  const controlsRef = useRef<ComponentRef<typeof OrbitControls>>(null);
 
   useEffect(() => {
     // Imperative access via the store avoids the react-hooks/immutability
