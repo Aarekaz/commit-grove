@@ -12,12 +12,16 @@ import { TimelineRuler } from "./TimelineRuler";
 import { HoverInfo } from "./HoverInfo";
 import { StatsOverlay } from "./StatsOverlay";
 import { CinematicOverlay } from "./CinematicOverlay";
+import { Scene3DSkeleton } from "./Scene3DSkeleton";
 
 // Dynamic-import the 3D scene so three.js + @react-three/fiber +
 // @react-three/drei only load when the user actually enters Forest or
 // City mode. ssr:false keeps the chunk out of the initial hydration
 // payload — Grid-mode and landing-page visitors never pay for it.
-const ForestScene = dynamic(() => import("./Scene3D"), { ssr: false });
+const ForestScene = dynamic(() => import("./Scene3D"), {
+  ssr: false,
+  loading: () => <Scene3DSkeleton />,
+});
 
 type Props = {
   data: ContributionData;
