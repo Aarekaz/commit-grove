@@ -176,6 +176,19 @@ export function VisualizationShell({ data }: Props) {
     });
   }, [visibleWeeks, maxWeeks]);
 
+  // Speculatively start fetching the 3D chunk when the user hovers or
+  // focuses Forest/City. By the time they click, the module is in the
+  // browser cache and next/dynamic renders synchronously. Landing on
+  // Grid never triggers this, so Grid-only users still pay nothing.
+  const preloadedRef = useRef(false);
+  const handleModeIntent = useCallback((target: ViewMode) => {
+    if (preloadedRef.current) return;
+    if (target === "forest" || target === "city") {
+      preloadedRef.current = true;
+      import("./Scene3D");
+    }
+  }, []);
+
   // 3D tooltip
   const [hoveredDay, setHoveredDay] = useState<{
     day: TerrainCell;
@@ -286,7 +299,11 @@ export function VisualizationShell({ data }: Props) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
             >
-              <ViewToggle mode={mode} onModeChange={setMode} />
+              <ViewToggle
+                mode={mode}
+                onModeChange={setMode}
+                onModeIntent={handleModeIntent}
+              />
             </motion.div>
 
             {is3D && maxWeeks > 0 && (
