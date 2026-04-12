@@ -2,16 +2,22 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import dynamic from "next/dynamic";
 import type { ContributionData, TerrainCell, ViewMode } from "@/lib/types";
 import { generateTerrain } from "@/lib/terrain";
 import { flattenYearDays } from "@/lib/transform";
 import { ContributionHeatmap } from "./ContributionHeatmap";
-import { ForestScene } from "./ForestScene";
 import { ViewToggle } from "./ViewToggle";
 import { TimelineRuler } from "./TimelineRuler";
 import { HoverInfo } from "./HoverInfo";
 import { StatsOverlay } from "./StatsOverlay";
 import { CinematicOverlay } from "./CinematicOverlay";
+
+// Dynamic-import the 3D scene so three.js + @react-three/fiber +
+// @react-three/drei only load when the user actually enters Forest or
+// City mode. Grid-mode and landing-page visitors never download the
+// ~260KB gzipped 3D bundle.
+const ForestScene = dynamic(() => import("./Scene3D"));
 
 type Props = {
   data: ContributionData;
