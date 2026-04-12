@@ -15,9 +15,9 @@ import { CinematicOverlay } from "./CinematicOverlay";
 
 // Dynamic-import the 3D scene so three.js + @react-three/fiber +
 // @react-three/drei only load when the user actually enters Forest or
-// City mode. Grid-mode and landing-page visitors never download the
-// ~260KB gzipped 3D bundle.
-const ForestScene = dynamic(() => import("./Scene3D"));
+// City mode. ssr:false keeps the chunk out of the initial hydration
+// payload — Grid-mode and landing-page visitors never pay for it.
+const ForestScene = dynamic(() => import("./Scene3D"), { ssr: false });
 
 type Props = {
   data: ContributionData;
