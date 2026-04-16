@@ -8,9 +8,22 @@ type Props = {
 
 export async function generateMetadata({ params }: Props) {
   const { username } = await params;
+  const title = `${username}'s forest — CommitGrove`;
+  const description = `Watch ${username}'s GitHub contributions grow into a living forest.`;
   return {
-    title: `${username}'s forest — CommitGrove`,
-    description: `Watch ${username}'s GitHub contributions grow into a living forest.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "profile",
+      siteName: "CommitGrove",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
