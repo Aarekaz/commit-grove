@@ -217,15 +217,15 @@ export function VisualizationShell({ data }: Props) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
-      {/* 2D Heatmap */}
+      {/* 2D Heatmap — pure opacity crossfade against the 3D scene below. */}
       <AnimatePresence>
         {showControls && !is3D && (
           <motion.div
             key="grid"
             className="absolute inset-0 z-[1]"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: MODE_TRANSITION_S, ease: MODE_TRANSITION_EASE }}
           >
             <ContributionHeatmap years={data.years} />
@@ -233,7 +233,12 @@ export function VisualizationShell({ data }: Props) {
         )}
       </AnimatePresence>
 
-      {/* 3D Scene — always visible during cinematic + 3D modes */}
+      {/*
+        3D Scene — the other half of the grid↔3D crossfade. Always
+        mounted (to keep three.js state warm), opacity toggled in sync
+        with the grid's AnimatePresence fade so the two surfaces land
+        on the same duration + easing curve.
+      */}
       {fullTerrain.length > 0 && (
         <div
           className="absolute inset-0"
