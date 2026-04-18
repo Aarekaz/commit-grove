@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
 import type { ThreeEvent } from "@react-three/fiber";
 import { getSeasonPalette } from "@/lib/seasons";
+import { cellToWorld } from "@/lib/sceneLayout";
 
 type Props = {
   cells: TerrainCell[];
@@ -27,8 +28,7 @@ type VoxelCube = {
 function generateTreeCubes(cell: TerrainCell, baseY: number): VoxelCube[] {
   if (cell.count <= 0 || cell.terrainType === "water") return [];
 
-  const cx = cell.col * CELL_SIZE;
-  const cz = cell.row * CELL_SIZE;
+  const { x: cx, z: cz } = cellToWorld(cell, CELL_SIZE);
   const t = cell.height;
   const cubes: VoxelCube[] = [];
   const scale = 0.3 + t * 0.45;

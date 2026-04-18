@@ -5,6 +5,7 @@ import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
 import type { ThreeEvent } from "@react-three/fiber";
 import { getCitySeasonPalette } from "@/lib/seasons";
+import { cellToWorld } from "@/lib/sceneLayout";
 
 type Props = {
   cells: TerrainCell[];
@@ -14,6 +15,7 @@ type Props = {
 
 const CELL_SIZE = 1;
 const GAP = 0.1;
+const CITY_STEP = CELL_SIZE + GAP;
 const MAX_HEIGHT = 4;
 
 // Feature type tags for seasonal coloring
@@ -28,8 +30,7 @@ type CityVoxel = {
 };
 
 function generateParkCubes(cell: TerrainCell): CityVoxel[] {
-  const cx = cell.col * (CELL_SIZE + GAP);
-  const cz = cell.row * (CELL_SIZE + GAP);
+  const { x: cx, z: cz } = cellToWorld(cell, CITY_STEP);
   const cubes: CityVoxel[] = [];
   const idx = Math.min(4, cell.level);
 
@@ -53,8 +54,7 @@ function generateParkCubes(cell: TerrainCell): CityVoxel[] {
 }
 
 function generateBuildingCubes(cell: TerrainCell): CityVoxel[] {
-  const cx = cell.col * (CELL_SIZE + GAP);
-  const cz = cell.row * (CELL_SIZE + GAP);
+  const { x: cx, z: cz } = cellToWorld(cell, CITY_STEP);
   const t = cell.height;
   const cubes: CityVoxel[] = [];
   const colorIdx = Math.min(4, Math.floor(t * 4.99));
