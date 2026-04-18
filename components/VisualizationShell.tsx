@@ -13,6 +13,11 @@ import { HoverInfo } from "./HoverInfo";
 import { StatsOverlay } from "./StatsOverlay";
 import { CinematicOverlay } from "./CinematicOverlay";
 import { Scene3DSkeleton } from "./Scene3DSkeleton";
+import {
+  MODE_TRANSITION_EASE,
+  MODE_TRANSITION_EASE_CSS,
+  MODE_TRANSITION_S,
+} from "@/lib/transitions";
 
 // Dynamic-import the 3D scene so three.js + @react-three/fiber +
 // @react-three/drei only load when the user actually enters Forest or
@@ -221,7 +226,7 @@ export function VisualizationShell({ data }: Props) {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
+            transition={{ duration: MODE_TRANSITION_S, ease: MODE_TRANSITION_EASE }}
           >
             <ContributionHeatmap years={data.years} />
           </motion.div>
@@ -235,7 +240,7 @@ export function VisualizationShell({ data }: Props) {
           style={{
             opacity: introPhase === "cinematic" || is3D ? 1 : 0,
             pointerEvents: introPhase === "cinematic" || is3D ? "auto" : "none",
-            transition: "opacity 0.3s ease-out",
+            transition: `opacity ${MODE_TRANSITION_S}s ${MODE_TRANSITION_EASE_CSS}`,
           }}
         >
           <ForestScene
