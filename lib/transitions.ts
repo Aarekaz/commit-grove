@@ -8,11 +8,16 @@
  */
 
 // Mode transition: grid ⇄ 3D crossfade.
-export const MODE_TRANSITION_MS = 300;
-export const MODE_TRANSITION_EASE = "easeOut" as const;
-// Matches MODE_TRANSITION_EASE but in CSS cubic-bezier form for places
-// that can't take a framer-motion string (inline style transition prop).
-export const MODE_TRANSITION_EASE_CSS = "cubic-bezier(0, 0, 0.2, 1)";
+//
+// 240ms feels snappier than the old 300ms without feeling rushed. The
+// "expo-out" curve (0.16, 1, 0.3, 1) pops at the start and settles
+// gently — lets the user feel the click land immediately, then the
+// visualisation arrives into stillness instead of braking hard.
+export const MODE_TRANSITION_MS = 240;
+// Same curve, two forms so framer-motion and inline CSS stay exactly
+// in sync — any divergence shows up as a phase offset in the crossfade.
+export const MODE_TRANSITION_EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+export const MODE_TRANSITION_EASE_CSS = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 // Derived: seconds for framer-motion props (which take s, not ms).
 export const MODE_TRANSITION_S = MODE_TRANSITION_MS / 1000;
