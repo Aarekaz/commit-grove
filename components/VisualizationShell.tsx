@@ -215,6 +215,11 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
   const showControls = introPhase === "ready";
 
+  // Reduced-motion: collapse the mode crossfade to an instant swap. Same
+  // timing applies to both the grid's framer-motion fade and the 3D scene's
+  // inline CSS so the two sides stay coordinated (even at 0s).
+  const transitionS = prefersReducedMotion ? 0 : MODE_TRANSITION_S;
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f6f8fa]">
       {/* 2D Heatmap — pure opacity crossfade against the 3D scene below. */}
@@ -226,7 +231,7 @@ export function VisualizationShell({ data }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: MODE_TRANSITION_S, ease: MODE_TRANSITION_EASE }}
+            transition={{ duration: transitionS, ease: MODE_TRANSITION_EASE }}
           >
             <ContributionHeatmap years={data.years} />
           </motion.div>
@@ -245,7 +250,7 @@ export function VisualizationShell({ data }: Props) {
           style={{
             opacity: introPhase === "cinematic" || is3D ? 1 : 0,
             pointerEvents: introPhase === "cinematic" || is3D ? "auto" : "none",
-            transition: `opacity ${MODE_TRANSITION_S}s ${MODE_TRANSITION_EASE_CSS}`,
+            transition: `opacity ${transitionS}s ${MODE_TRANSITION_EASE_CSS}`,
           }}
         >
           <ForestScene
