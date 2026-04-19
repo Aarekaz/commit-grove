@@ -215,7 +215,11 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
   const showControls = introPhase === "ready";
 
-  // Keyboard shortcuts: 1/2/3 = Grid/Forest/City.
+  // Keyboard shortcuts:
+  //   1/2/3       → Grid/Forest/City
+  //   Space       → play/pause the scrubber (3D modes only)
+  //   ←/→         → previous / next year
+  //
   // Deliberately global keydown (not scoped to a focused element) so the
   // shortcuts work from anywhere on the page. Skip when focus is inside
   // an editable element to avoid stealing key input.
@@ -225,13 +229,24 @@ export function VisualizationShell({ data }: Props) {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+
       if (e.key === "1") setMode("grid");
       else if (e.key === "2") setMode("forest");
       else if (e.key === "3") setMode("city");
+      else if (e.key === " " && is3D) {
+        e.preventDefault(); // stop page scroll
+        handlePlayToggle();
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        const idx = yearNumbers.indexOf(selectedYear!);
+        // yearNumbers is newest-first, so left = older (idx + 1), right = newer (idx - 1)
+        const nextIdx = e.key === "ArrowLeft" ? idx + 1 : idx - 1;
+        const nextYear = yearNumbers[nextIdx];
+        if (nextYear !== undefined) handleYearChange(nextYear);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showControls]);
+  }, [showControls, is3D, handlePlayToggle, yearNumbers, selectedYear, handleYearChange]);
 
   // Reduced-motion: collapse the mode crossfade to an instant swap. Same
   // timing applies to both the grid's framer-motion fade and the 3D scene's
