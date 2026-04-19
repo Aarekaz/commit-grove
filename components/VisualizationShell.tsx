@@ -215,6 +215,24 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
   const showControls = introPhase === "ready";
 
+  // Keyboard shortcuts: 1/2/3 = Grid/Forest/City.
+  // Deliberately global keydown (not scoped to a focused element) so the
+  // shortcuts work from anywhere on the page. Skip when focus is inside
+  // an editable element to avoid stealing key input.
+  useEffect(() => {
+    if (!showControls) return;
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === "1") setMode("grid");
+      else if (e.key === "2") setMode("forest");
+      else if (e.key === "3") setMode("city");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showControls]);
+
   // Reduced-motion: collapse the mode crossfade to an instant swap. Same
   // timing applies to both the grid's framer-motion fade and the 3D scene's
   // inline CSS so the two sides stay coordinated (even at 0s).
