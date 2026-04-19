@@ -13,6 +13,7 @@ import { HoverInfo } from "./HoverInfo";
 import { StatsOverlay } from "./StatsOverlay";
 import { CinematicOverlay } from "./CinematicOverlay";
 import { Scene3DSkeleton } from "./Scene3DSkeleton";
+import { KeyboardShortcutsModal } from "./KeyboardShortcutsModal";
 import {
   MODE_TRANSITION_EASE,
   MODE_TRANSITION_EASE_CSS,
@@ -215,6 +216,10 @@ export function VisualizationShell({ data }: Props) {
   const is3D = mode === "forest" || mode === "city";
   const showControls = introPhase === "ready";
 
+  // Keyboard shortcuts help modal — declared here so the keydown effect
+  // below can reference it.
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+
   // Keyboard shortcuts:
   //   1/2/3       → Grid/Forest/City
   //   Space       → play/pause the scrubber (3D modes only)
@@ -229,6 +234,16 @@ export function VisualizationShell({ data }: Props) {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      if (e.key === "?") {
+        setShortcutsOpen((s) => !s);
+        return;
+      }
+      if (e.key === "Escape" && shortcutsOpen) {
+        setShortcutsOpen(false);
+        return;
+      }
+      if (shortcutsOpen) return; // swallow all other shortcuts while modal is open
 
       if (e.key === "1") setMode("grid");
       else if (e.key === "2") setMode("forest");
@@ -246,7 +261,7 @@ export function VisualizationShell({ data }: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showControls, is3D, handlePlayToggle, yearNumbers, selectedYear, handleYearChange]);
+  }, [showControls, is3D, handlePlayToggle, yearNumbers, selectedYear, handleYearChange, shortcutsOpen]);
 
   // Reduced-motion: collapse the mode crossfade to an instant swap. Same
   // timing applies to both the grid's framer-motion fade and the 3D scene's
@@ -377,6 +392,11 @@ export function VisualizationShell({ data }: Props) {
           </>
         )}
       </AnimatePresence>
+
+      <KeyboardShortcutsModal
+        open={shortcutsOpen}
+        onClose={() => setShortcutsOpen(false)}
+      />
     </div>
   );
 }
