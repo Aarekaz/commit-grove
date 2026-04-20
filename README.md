@@ -35,6 +35,20 @@ Current split (post-analyze):
 
 Hovering or focusing the Forest/City buttons in the `ViewToggle` preloads the 3D chunk speculatively, so the click-to-render path is near-instant on broadband.
 
+## Keyboard shortcuts
+
+Active once the cinematic intro finishes.
+
+| Key | Action |
+|---|---|
+| `1` / `2` / `3` | Grid / Forest / City view |
+| `Space` | Play / pause the scrubber (3D modes) |
+| `←` / `→` | Previous / next year |
+| `?` | Toggle the shortcuts help modal |
+| `Esc` | Close the help modal |
+
+Shortcuts are suppressed when focus is inside an input/textarea or when modifier keys (cmd/ctrl/alt) are held — browser shortcuts still work normally.
+
 ## Tech
 
 - Next.js 16 (Turbopack)
