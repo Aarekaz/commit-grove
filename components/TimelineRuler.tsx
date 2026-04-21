@@ -20,7 +20,18 @@ type Props = {
 
 const SPEEDS = [0.5, 1, 2, 4];
 const TICK_WIDTH = 18;
-const RULER_VIEW_WIDTH = 750;
+const RULER_VIEW_WIDTH = 620;
+const RULER_HEIGHT = 48;
+
+// Tick tiers give the ruler an instrument-dial feel: every week a hair,
+// each month a finger, each quarter a long index.
+const TICK_H = {
+  week: 5,
+  month: 14,
+  quarter: 22,
+} as const;
+
+const QUARTER_MONTHS = new Set([0, 3, 6, 9]); // Jan / Apr / Jul / Oct
 
 export function TimelineRuler({
   maxWeeks,
@@ -122,33 +133,40 @@ export function TimelineRuler({
   const offset = -(visibleWeeks * TICK_WIDTH) + RULER_VIEW_WIDTH / 2;
   const totalWidth = (maxWeeks + 1) * TICK_WIDTH;
 
-  // Generate ticks + month labels
-  // Place month labels at fixed calendar positions (~4.33 weeks per month)
-  const monthWeeks = new Map<number, number>(); // week → monthIdx
+  // Map each week to a month, used for both ticks and labels.
+  const monthWeeks = new Map<number, number>();
   for (let m = 0; m < 12; m++) {
     const weekForMonth = Math.round((m / 12) * 52);
-    if (weekForMonth <= maxWeeks) {
-      monthWeeks.set(weekForMonth, m);
-    }
+    if (weekForMonth <= maxWeeks) monthWeeks.set(weekForMonth, m);
   }
 
   const ticks = [];
   for (let w = 0; w <= maxWeeks; w++) {
-    const isMajor = w % 4 === 0;
-    const monthLabel = monthWeeks.get(w);
+    const monthIdx = monthWeeks.get(w);
+    const isMonth = monthIdx !== undefined;
+    const isQuarter = isMonth && QUARTER_MONTHS.has(monthIdx);
+
+    const h = isQuarter ? TICK_H.quarter : isMonth ? TICK_H.month : TICK_H.week;
+    const color = isQuarter
+      ? "bg-gray-700"
+      : isMonth
+        ? "bg-gray-400"
+        : "bg-gray-300";
 
     ticks.push(
       <div
         key={w}
-        className="absolute flex flex-col items-center"
+        className="absolute top-0 flex flex-col items-center"
         style={{ left: w * TICK_WIDTH }}
       >
-        <div
-          className={`w-px ${isMajor ? "h-7 bg-gray-500" : "h-3 bg-gray-300/70"}`}
-        />
-        {monthLabel !== undefined && (
-          <span className="absolute top-8 whitespace-nowrap text-[9px] font-semibold tracking-wider text-gray-400 uppercase">
-            {MONTHS[monthLabel]}
+        <div className={`w-px ${color}`} style={{ height: h }} />
+        {isMonth && (
+          <span
+            className={`absolute top-[26px] whitespace-nowrap text-[9px] tabular-nums uppercase tracking-[0.14em] ${
+              isQuarter ? "font-semibold text-gray-600" : "font-medium text-gray-400"
+            }`}
+          >
+            {MONTHS[monthIdx]}
           </span>
         )}
       </div>
@@ -156,61 +174,65 @@ export function TimelineRuler({
   }
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-10">
-      {showHint && (
-        <p
-          className="pointer-events-none absolute left-1/2 top-[58px] -translate-x-1/2 whitespace-nowrap text-[10px] font-medium tracking-wide text-gray-400 opacity-0 animate-[fade-in_0.4s_ease-out_0.8s_forwards]"
-          aria-hidden="true"
-        >
-          drag to scrub · scroll to step
-        </p>
-      )}
-      <div className="flex items-center justify-center gap-3 px-4 pt-3 pb-1">
-        {/* Year nav */}
-        <div className="flex shrink-0 items-center">
+    <div className="absolute top-4 left-1/2 z-10 -translate-x-1/2">
+      <div className="relative flex items-stretch rounded-2xl border border-gray-200/70 bg-white/85 shadow-[0_6px_24px_-8px_rgba(15,23,42,0.15)] backdrop-blur-md">
+        {/* Year nav cell */}
+        <div className="flex items-center gap-0.5 px-3">
           <button
             onClick={() => prevYear && onYearChange(prevYear)}
             disabled={!prevYear}
             aria-label={prevYear ? `Previous year (${prevYear})` : "Previous year"}
-            className="flex h-8 w-6 items-center justify-center text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
+            className="flex h-7 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-25"
           >
-            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor" aria-hidden="true"><path d="M5.5 0.5L1 5l4.5 4.5" /></svg>
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5.5 0.5L1 5l4.5 4.5" /></svg>
           </button>
-          <span className="min-w-[3.5rem] text-center text-base font-bold tabular-nums text-gray-800">
+          <span className="min-w-[3rem] text-center text-[13px] font-semibold tabular-nums text-gray-800">
             {selectedYear}
           </span>
           <button
             onClick={() => nextYear && onYearChange(nextYear)}
             disabled={!nextYear}
             aria-label={nextYear ? `Next year (${nextYear})` : "Next year"}
-            className="flex h-8 w-6 items-center justify-center text-gray-400 transition-colors hover:text-gray-700 disabled:opacity-20"
+            className="flex h-7 w-6 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:pointer-events-none disabled:opacity-25"
           >
-            <svg width="7" height="10" viewBox="0 0 7 10" fill="currentColor" aria-hidden="true"><path d="M1.5 0.5L6 5l-4.5 4.5" /></svg>
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M1.5 0.5L6 5l-4.5 4.5" /></svg>
           </button>
         </div>
 
-        {/* Compass ruler */}
+        {/* Divider */}
+        <div className="my-2 w-px bg-gray-200/80" />
+
+        {/* Compass ruler cell */}
         <div
           className="relative cursor-grab overflow-hidden select-none active:cursor-grabbing"
-          style={{ width: `min(${RULER_VIEW_WIDTH}px, 65vw)`, height: 44 }}
+          style={{
+            width: `min(${RULER_VIEW_WIDTH}px, 58vw)`,
+            height: RULER_HEIGHT,
+          }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
           onWheel={handleWheel}
         >
-          {/* Fade edges */}
-          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#f6f8fa] to-transparent" />
-          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#f6f8fa] to-transparent" />
+          {/* Baseline hairline so empty-ruler doesn't feel hollow */}
+          <div className="pointer-events-none absolute top-[22px] left-0 right-0 h-px bg-gray-200/70" />
 
-          {/* Center needle */}
-          <div className="pointer-events-none absolute left-1/2 top-0 z-20 -translate-x-1/2">
-            <div className="mx-auto h-7 w-[3px] rounded-full bg-green-500 shadow-sm shadow-green-500/40" />
-            <div className="mx-auto mt-0.5 h-2.5 w-2.5 rotate-45 bg-green-500 shadow-sm shadow-green-500/40" />
+          {/* Fade edges — fade to the housing's own bg so the seam is clean */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-white to-transparent" />
+          <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-white to-transparent" />
+
+          {/* Needle: small triangle at top edge + 1px hairline drop + dot at the baseline */}
+          <div className="pointer-events-none absolute left-1/2 top-0 z-20 flex -translate-x-1/2 flex-col items-center">
+            <svg width="10" height="7" viewBox="0 0 10 7" aria-hidden="true" className="text-green-600">
+              <path d="M0 0 L10 0 L5 7 Z" fill="currentColor" />
+            </svg>
+            <div className="h-[22px] w-px bg-green-600/80" />
+            <div className="-mt-[3px] h-1.5 w-1.5 rounded-full bg-green-600 shadow-[0_0_0_2px_rgba(22,163,74,0.15)]" />
           </div>
 
           {/* Scrolling ruler track */}
           <div
-            className="absolute top-0"
+            className="absolute top-[2px]"
             style={{
               transform: `translateX(${offset}px)`,
               width: totalWidth,
@@ -221,29 +243,32 @@ export function TimelineRuler({
           </div>
         </div>
 
-        {/* Play + speed */}
-        <div className="flex shrink-0 items-center gap-1.5">
+        {/* Divider */}
+        <div className="my-2 w-px bg-gray-200/80" />
+
+        {/* Playback cell */}
+        <div className="flex items-center gap-1 px-2.5">
           <button
             onClick={onPlayToggle}
             aria-label={isPlaying ? "Pause" : "Play"}
             aria-pressed={isPlaying}
-            className="flex h-8 w-8 items-center justify-center rounded-md transition-colors hover:bg-black/5"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
             {isPlaying ? (
-              <svg width="8" height="10" viewBox="0 0 8 10" fill="currentColor" className="text-gray-500" aria-hidden="true">
-                <rect x="0.5" y="0" width="2.5" height="10" rx="0.5" />
-                <rect x="5" y="0" width="2.5" height="10" rx="0.5" />
+              <svg width="9" height="11" viewBox="0 0 9 11" fill="currentColor" aria-hidden="true">
+                <rect x="0.5" y="0.5" width="2.5" height="10" rx="0.5" />
+                <rect x="6" y="0.5" width="2.5" height="10" rx="0.5" />
               </svg>
             ) : (
-              <svg width="9" height="10" viewBox="0 0 9 10" fill="currentColor" className="ml-0.5 text-gray-500" aria-hidden="true">
-                <path d="M0.5 0.5v9l8-4.5z" />
+              <svg width="10" height="11" viewBox="0 0 10 11" fill="currentColor" className="ml-[1px]" aria-hidden="true">
+                <path d="M1 0.5v10l8.5-5z" />
               </svg>
             )}
           </button>
           <div
             role="group"
             aria-label="Playback speed"
-            className="hidden sm:flex rounded bg-black/5 p-0.5"
+            className="hidden sm:flex items-center rounded-md bg-gray-100/80 p-[2px]"
           >
             {SPEEDS.map((s) => (
               <button
@@ -251,18 +276,27 @@ export function TimelineRuler({
                 onClick={() => onSpeedChange(s)}
                 aria-label={`${s}× speed`}
                 aria-pressed={speed === s}
-                className={`rounded px-1.5 py-0.5 text-[8px] font-bold tabular-nums transition-colors ${
+                className={`rounded px-1.5 py-[3px] text-[10px] font-semibold tabular-nums transition-colors ${
                   speed === s
-                    ? "bg-gray-900 text-white"
-                    : "text-gray-400 hover:text-gray-700"
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-800"
                 }`}
               >
-                {s}x
+                {s}×
               </button>
             ))}
           </div>
         </div>
       </div>
+
+      {showHint && (
+        <p
+          className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium tracking-[0.08em] text-gray-400 opacity-0 animate-[fade-in_0.4s_ease-out_0.8s_forwards]"
+          aria-hidden="true"
+        >
+          drag to scrub · scroll to step
+        </p>
+      )}
     </div>
   );
 }
