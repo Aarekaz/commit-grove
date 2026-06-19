@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
 import type { ThreeEvent } from "@react-three/fiber";
-import { getSeasonPalette } from "@/lib/seasons";
+import { getSeasonPalette, palettesEqual, type SeasonPalette } from "@/lib/seasons";
 import { cellToWorld } from "@/lib/sceneLayout";
 
 type Props = {
@@ -108,9 +108,25 @@ export function VoxelForest({ cells, revealedCols, onHover }: Props) {
     treeRef.current.instanceMatrix.needsUpdate = true;
   }, [allTreeCubes, dummy]);
 
-  // Update COLORS based on season (revealedCols → week → palette)
+  // Update COLORS based on season (revealedCols → week → palette).
+  // Skip the work when neither the geometry nor the palette changed since the
+  // last applied recolor: getSeasonPalette is constant across plateau weeks
+  // (e.g. the ~12-week summer hold), so this avoids needless full instanceColor
+  // re-uploads on every reveal tick. The geometry check forces a recolor when
+  // the mesh is rebuilt (year switch) even if the palette value is unchanged.
+  const lastPaletteRef = useRef<SeasonPalette | null>(null);
+  const lastGeomRef = useRef<{ cells: TerrainCell[]; cubes: VoxelCube[] } | null>(null);
   useEffect(() => {
     const season = getSeasonPalette(revealedCols);
+    const geomChanged =
+      !lastGeomRef.current ||
+      lastGeomRef.current.cells !== sortedCells ||
+      lastGeomRef.current.cubes !== allTreeCubes;
+    if (!geomChanged && lastPaletteRef.current && palettesEqual(lastPaletteRef.current, season)) {
+      return;
+    }
+    lastPaletteRef.current = season;
+    lastGeomRef.current = { cells: sortedCells, cubes: allTreeCubes };
 
     if (terrainRef.current && sortedCells.length > 0) {
       for (let i = 0; i < sortedCells.length; i++) {

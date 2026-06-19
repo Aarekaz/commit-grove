@@ -150,6 +150,14 @@ function lerpPalette(a: SeasonPalette, b: SeasonPalette, t: number): SeasonPalet
 
 export type { SeasonPalette };
 
+// Deep value-equality for season palettes (forest or city). The 3D renderers
+// use this to skip re-uploading instance colors on reveal ticks where the
+// palette hasn't actually changed — the palette is constant across the plateau
+// week ranges (notably the ~12-week summer hold), so most ticks are no-ops.
+export function palettesEqual<T>(a: T, b: T): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 export function getSeasonPalette(week: number): SeasonPalette {
   const w = Math.max(0, Math.min(52, week));
 
@@ -175,7 +183,7 @@ export function getSeasonPalette(week: number): SeasonPalette {
 // CITY SEASONS
 // ═══════════════════════════════════════════════════
 
-type CitySeason = {
+export type CitySeason = {
   skyTop: RGB;
   skyBottom: RGB;
   body: RGB[];

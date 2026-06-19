@@ -4,7 +4,7 @@ import { useRef, useMemo, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
 import type { ThreeEvent } from "@react-three/fiber";
-import { getCitySeasonPalette } from "@/lib/seasons";
+import { getCitySeasonPalette, palettesEqual, type CitySeason } from "@/lib/seasons";
 import { cellToWorld } from "@/lib/sceneLayout";
 
 type Props = {
@@ -130,9 +130,23 @@ export function CityGrid({ cells, revealedCols, onHover }: Props) {
     featureRef.current.instanceMatrix.needsUpdate = true;
   }, [allFeatures, dummy]);
 
-  // Update COLORS based on season
+  // Update COLORS based on season. Skip when neither geometry nor palette
+  // changed since the last applied recolor (see VoxelForest for rationale):
+  // the palette is constant across plateau weeks, so most reveal ticks are
+  // no-ops; the geometry check forces a recolor when the mesh is rebuilt.
+  const lastPaletteRef = useRef<CitySeason | null>(null);
+  const lastGeomRef = useRef<{ cells: TerrainCell[]; cubes: CityVoxel[] } | null>(null);
   useEffect(() => {
     const season = getCitySeasonPalette(revealedCols);
+    const geomChanged =
+      !lastGeomRef.current ||
+      lastGeomRef.current.cells !== sortedCells ||
+      lastGeomRef.current.cubes !== allFeatures;
+    if (!geomChanged && lastPaletteRef.current && palettesEqual(lastPaletteRef.current, season)) {
+      return;
+    }
+    lastPaletteRef.current = season;
+    lastGeomRef.current = { cells: sortedCells, cubes: allFeatures };
 
     if (baseRef.current && sortedCells.length > 0) {
       for (let i = 0; i < sortedCells.length; i++) {
