@@ -1,11 +1,10 @@
 "use client";
 
-import { useRef, useMemo, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import type { TerrainCell } from "@/lib/types";
-import type { ThreeEvent } from "@react-three/fiber";
-import { getCitySeasonPalette, palettesEqual, type CitySeason } from "@/lib/seasons";
+import { getCitySeasonPalette, type CitySeason } from "@/lib/seasons";
 import { cellToWorld } from "@/lib/sceneLayout";
+import { InstancedVoxelLayer, type VoxelBase, type RGB } from "./InstancedVoxelLayer";
 
 type Props = {
   cells: TerrainCell[];
@@ -21,10 +20,7 @@ const MAX_HEIGHT = 4;
 // Feature type tags for seasonal coloring
 type FeatureTag = "body" | "glass" | "roof" | "spire" | "parkGround" | "parkTrunk" | "parkCanopy";
 
-type CityVoxel = {
-  x: number; y: number; z: number;
-  w: number; h: number; d: number;
-  col: number;
+type CityVoxel = VoxelBase & {
   colorIdx: number; // 0-4 index into palette arrays
   tag: FeatureTag;
 };
@@ -92,143 +88,45 @@ function generateCityCubes(cell: TerrainCell): CityVoxel[] {
   return generateBuildingCubes(cell);
 }
 
+// Stable module-level callbacks injected into InstancedVoxelLayer (see VoxelForest).
+function baseMatrix(cell: TerrainCell, dummy: THREE.Object3D): void {
+  dummy.position.set(cell.col * (CELL_SIZE + GAP), -0.05, cell.row * (CELL_SIZE + GAP));
+  dummy.scale.set(CELL_SIZE, 0.1, CELL_SIZE);
+  dummy.rotation.set(0, 0, 0);
+}
+
+function baseColor(cell: TerrainCell, season: CitySeason): RGB {
+  if (cell.terrainType === "water") return season.water;
+  if (cell.count > 0 && cell.level <= 2) return season.parkGreen[Math.min(4, cell.level)] as RGB;
+  if (cell.count > 0) return season.pavement;
+  return season.road;
+}
+
+function featureColor(cube: CityVoxel, season: CitySeason): RGB {
+  const idx = cube.colorIdx;
+  switch (cube.tag) {
+    case "body": return season.body[idx] as RGB;
+    case "glass": return season.glass[idx] as RGB;
+    case "roof": { const b = season.body[idx]; return [b[0] * 0.85, b[1] * 0.85, b[2] * 0.85]; }
+    case "spire": return [0.5, 0.5, 0.55];
+    case "parkGround": return season.parkGreen[idx] as RGB;
+    case "parkTrunk": { const g = season.parkGreen[idx]; return [g[0] * 0.6, g[1] * 0.6, g[2] * 0.6]; }
+    case "parkCanopy": { const g = season.parkGreen[idx]; return [g[0] * 0.9, g[1] * 0.95, g[2] * 0.85]; }
+    default: return [0.5, 0.5, 0.5];
+  }
+}
+
 export function CityGrid({ cells, revealedCols, onHover }: Props) {
-  const baseRef = useRef<THREE.InstancedMesh>(null);
-  const featureRef = useRef<THREE.InstancedMesh>(null);
-
-  const dummy = useMemo(() => new THREE.Object3D(), []);
-  const color = useMemo(() => new THREE.Color(), []);
-
-  const sortedCells = useMemo(() => [...cells].sort((a, b) => a.col - b.col || a.row - b.row), [cells]);
-  const allFeatures = useMemo(() => sortedCells.flatMap(generateCityCubes).sort((a, b) => a.col - b.col), [sortedCells]);
-
-  // Set base matrices ONCE
-  useEffect(() => {
-    if (!baseRef.current || sortedCells.length === 0) return;
-    for (let i = 0; i < sortedCells.length; i++) {
-      const cell = sortedCells[i];
-      dummy.position.set(cell.col * (CELL_SIZE + GAP), -0.05, cell.row * (CELL_SIZE + GAP));
-      dummy.scale.set(CELL_SIZE, 0.1, CELL_SIZE);
-      dummy.rotation.set(0, 0, 0);
-      dummy.updateMatrix();
-      baseRef.current.setMatrixAt(i, dummy.matrix);
-    }
-    baseRef.current.instanceMatrix.needsUpdate = true;
-  }, [sortedCells, dummy]);
-
-  // Set feature matrices ONCE
-  useEffect(() => {
-    if (!featureRef.current || allFeatures.length === 0) return;
-    for (let i = 0; i < allFeatures.length; i++) {
-      const cube = allFeatures[i];
-      dummy.position.set(cube.x, cube.y, cube.z);
-      dummy.scale.set(cube.w, cube.h, cube.d);
-      dummy.rotation.set(0, 0, 0);
-      dummy.updateMatrix();
-      featureRef.current.setMatrixAt(i, dummy.matrix);
-    }
-    featureRef.current.instanceMatrix.needsUpdate = true;
-  }, [allFeatures, dummy]);
-
-  // Update COLORS based on season. Skip when neither geometry nor palette
-  // changed since the last applied recolor (see VoxelForest for rationale):
-  // the palette is constant across plateau weeks, so most reveal ticks are
-  // no-ops; the geometry check forces a recolor when the mesh is rebuilt.
-  const lastPaletteRef = useRef<CitySeason | null>(null);
-  const lastGeomRef = useRef<{ cells: TerrainCell[]; cubes: CityVoxel[] } | null>(null);
-  useEffect(() => {
-    const season = getCitySeasonPalette(revealedCols);
-    const geomChanged =
-      !lastGeomRef.current ||
-      lastGeomRef.current.cells !== sortedCells ||
-      lastGeomRef.current.cubes !== allFeatures;
-    if (!geomChanged && lastPaletteRef.current && palettesEqual(lastPaletteRef.current, season)) {
-      return;
-    }
-    lastPaletteRef.current = season;
-    lastGeomRef.current = { cells: sortedCells, cubes: allFeatures };
-
-    if (baseRef.current && sortedCells.length > 0) {
-      for (let i = 0; i < sortedCells.length; i++) {
-        const cell = sortedCells[i];
-        let rgb: [number, number, number];
-        if (cell.terrainType === "water") rgb = season.water;
-        else if (cell.count > 0 && cell.level <= 2) rgb = season.parkGreen[Math.min(4, cell.level)];
-        else if (cell.count > 0) rgb = season.pavement;
-        else rgb = season.road;
-        color.setRGB(rgb[0], rgb[1], rgb[2]);
-        baseRef.current.setColorAt(i, color);
-      }
-      if (baseRef.current.instanceColor) baseRef.current.instanceColor.needsUpdate = true;
-    }
-
-    if (featureRef.current && allFeatures.length > 0) {
-      for (let i = 0; i < allFeatures.length; i++) {
-        const cube = allFeatures[i];
-        const idx = cube.colorIdx;
-        let rgb: [number, number, number];
-        switch (cube.tag) {
-          case "body": rgb = season.body[idx] as [number, number, number]; break;
-          case "glass": rgb = season.glass[idx] as [number, number, number]; break;
-          case "roof": { const b = season.body[idx]; rgb = [b[0] * 0.85, b[1] * 0.85, b[2] * 0.85]; break; }
-          case "spire": rgb = [0.5, 0.5, 0.55]; break;
-          case "parkGround": rgb = season.parkGreen[idx] as [number, number, number]; break;
-          case "parkTrunk": { const g = season.parkGreen[idx]; rgb = [g[0] * 0.6, g[1] * 0.6, g[2] * 0.6]; break; }
-          case "parkCanopy": { const g = season.parkGreen[idx]; rgb = [g[0] * 0.9, g[1] * 0.95, g[2] * 0.85]; break; }
-          default: rgb = [0.5, 0.5, 0.5];
-        }
-        color.setRGB(rgb[0], rgb[1], rgb[2]);
-        featureRef.current.setColorAt(i, color);
-      }
-      if (featureRef.current.instanceColor) featureRef.current.instanceColor.needsUpdate = true;
-    }
-  }, [revealedCols, sortedCells, allFeatures, color]);
-
-  // Progressive reveal
-  useEffect(() => {
-    if (baseRef.current) {
-      let count = 0;
-      for (let i = 0; i < sortedCells.length; i++) {
-        if (sortedCells[i].col < revealedCols) count = i + 1; else break;
-      }
-      baseRef.current.count = count;
-    }
-    if (featureRef.current) {
-      let count = 0;
-      for (let i = 0; i < allFeatures.length; i++) {
-        if (allFeatures[i].col < revealedCols) count = i + 1; else break;
-      }
-      featureRef.current.count = count;
-    }
-  }, [revealedCols, sortedCells, allFeatures]);
-
-  const handlePointerMove = useCallback(
-    (e: ThreeEvent<PointerEvent>) => {
-      e.stopPropagation();
-      const id = e.instanceId;
-      if (id !== undefined && id < sortedCells.length && sortedCells[id].terrainType !== "water") {
-        onHover?.(sortedCells[id]);
-      } else { onHover?.(null); }
-    },
-    [sortedCells, onHover]
-  );
-
-  const handlePointerLeave = useCallback(() => { onHover?.(null); }, [onHover]);
-
-  if (sortedCells.length === 0) return null;
-
   return (
-    <>
-      <instancedMesh ref={baseRef} args={[undefined, undefined, sortedCells.length]} frustumCulled={false} onPointerMove={handlePointerMove} onPointerLeave={handlePointerLeave}>
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial />
-      </instancedMesh>
-      {allFeatures.length > 0 && (
-        <instancedMesh ref={featureRef} args={[undefined, undefined, allFeatures.length]} frustumCulled={false}>
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial />
-        </instancedMesh>
-      )}
-    </>
+    <InstancedVoxelLayer
+      cells={cells}
+      revealedCols={revealedCols}
+      buildCubes={generateCityCubes}
+      getPalette={getCitySeasonPalette}
+      terrainMatrixOf={baseMatrix}
+      terrainColorOf={baseColor}
+      cubeColorOf={featureColor}
+      onHover={onHover}
+    />
   );
 }
