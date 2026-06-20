@@ -19,6 +19,14 @@ function makeDays(heights: number[][]): ContributionDay[] {
   return days;
 }
 
+// A deterministic cols × rows grid of varied heights (mirrors the original
+// `((col + row) % 5) / 4` fixture) for tests that need a fuller board.
+function grid(cols: number, rows = 7): number[][] {
+  return Array.from({ length: cols }, (_, col) =>
+    Array.from({ length: rows }, (_, row) => ((col + row) % 5) / 4)
+  );
+}
+
 describe("generateTerrain", () => {
   it("returns TerrainCell[] with terrainHeight and terrainType", () => {
     const days = makeDays([[0, 0, 0.5, 1, 0.5, 0, 0], [0, 0, 0.3, 0.8, 0.3, 0, 0]]);
@@ -43,18 +51,41 @@ describe("generateTerrain", () => {
   });
 
   it("produces deterministic output for same username", () => {
-    const days = makeDays([[0, 0.5, 1, 0.5, 0, 0.3, 0.7]]);
-    const cells1 = generateTerrain(days, 7, 1, "aarekaz");
-    const cells2 = generateTerrain(days, 7, 1, "aarekaz");
-    expect(cells1.map((c) => c.terrainHeight)).toEqual(cells2.map((c) => c.terrainHeight));
+    const days = makeDays(grid(10));
+    const a = generateTerrain(days, 7, 10, "aarekaz");
+    const b = generateTerrain(days, 7, 10, "aarekaz");
+    expect(a).toHaveLength(b.length);
+    for (let i = 0; i < a.length; i++) {
+      expect(a[i].terrainHeight).toBe(b[i].terrainHeight);
+      expect(a[i].terrainType).toBe(b[i].terrainType);
+    }
   });
 
-  it("produces different output for different usernames", () => {
-    const days = makeDays([[0, 0.5, 1, 0.5, 0, 0.3, 0.7]]);
-    const cells1 = generateTerrain(days, 7, 1, "aarekaz");
-    const cells2 = generateTerrain(days, 7, 1, "torvalds");
-    const heights1 = cells1.map((c) => c.terrainHeight);
-    const heights2 = cells2.map((c) => c.terrainHeight);
-    expect(heights1).not.toEqual(heights2);
+  it("produces different noise for different usernames", () => {
+    const days = makeDays(grid(10));
+    const a = generateTerrain(days, 7, 10, "aarekaz");
+    const b = generateTerrain(days, 7, 10, "torvalds");
+    const differingCells = a.filter((cell, i) => cell.terrainHeight !== b[i].terrainHeight);
+    // Noise should shift at least 25% of cells even at low amplitude.
+    expect(differingCells.length).toBeGreaterThan(a.length * 0.25);
+  });
+
+  it("never produces negative terrain heights", () => {
+    const days = makeDays(grid(10));
+    const out = generateTerrain(days, 7, 10, "aarekaz");
+    for (const cell of out) {
+      expect(cell.terrainHeight).toBeGreaterThanOrEqual(0);
+    }
+  });
+
+  it("preserves original row, col, and date mapping", () => {
+    const days = makeDays(grid(5));
+    const out = generateTerrain(days, 7, 5, "aarekaz");
+    expect(out).toHaveLength(days.length);
+    for (let i = 0; i < days.length; i++) {
+      expect(out[i].row).toBe(days[i].row);
+      expect(out[i].col).toBe(days[i].col);
+      expect(out[i].date).toBe(days[i].date);
+    }
   });
 });

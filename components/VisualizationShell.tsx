@@ -67,7 +67,14 @@ export function VisualizationShell({ data }: Props) {
 
   useEffect(() => {
     if (introPhase !== "cinematic") return;
-    if (totalCols === 0) return;
+    // No past contributions to reveal (e.g. a brand-new account, or the current
+    // year on Jan 1). Skip straight to "ready" so the controls render and the
+    // user can navigate to a populated year — otherwise the intro never ends
+    // and the screen stays blank. Microtask matches the reduced-motion path.
+    if (totalCols === 0) {
+      queueMicrotask(() => setIntroPhase("ready"));
+      return;
+    }
 
     // Accessibility: users with prefers-reduced-motion skip the cinematic
     // reveal entirely and land directly on the fully-built scene. Schedule
@@ -308,6 +315,35 @@ export function VisualizationShell({ data }: Props) {
             numCols={totalCols}
             onDayHover={handleDayHover}
           />
+        </div>
+      )}
+
+      {/*
+        Empty state — a 3D mode landed on a year with no past contributions
+        (so nothing to build). The grid heatmap shows all years, so this only
+        bites in forest/city. Surface year buttons so the user is never stranded
+        on a blank scene with the timeline ruler hidden.
+      */}
+      {showControls && is3D && totalCols === 0 && (
+        <div className="absolute inset-0 z-[2] flex flex-col items-center justify-center gap-4 text-center">
+          <p className="text-sm text-gray-500">
+            No contributions to show for {selectedYear}.
+          </p>
+          <div className="flex items-center gap-2">
+            {yearNumbers.map((y) => (
+              <button
+                key={y}
+                onClick={() => handleYearChange(y)}
+                className={`rounded-md px-3 py-1.5 text-sm font-medium tabular-nums transition-colors ${
+                  y === selectedYear
+                    ? "bg-gray-900 text-white"
+                    : "bg-black/5 text-gray-600 hover:bg-black/10"
+                }`}
+              >
+                {y}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 

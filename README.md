@@ -11,7 +11,7 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
-You'll need a `GITHUB_TOKEN` in `.env.local` with `read:user` scope.
+You'll need a `GITHUB_TOKEN` in `.env.local` with `read:user` scope. Copy `.env.example` to `.env.local` and add your token.
 
 ## Scripts
 
